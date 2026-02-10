@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Iconos ObraPro</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f1f5f9; }
+        .container { max-width: 800px; margin: 0 auto; }
+        canvas { 
+            border: 2px solid #cbd5e1; 
+            margin: 10px; 
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .download-btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        h2 { color: #0f172a; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Iconos ObraPro</h1>
+        <p>Haz clic en cada icono para descargarlo en el tamaño correspondiente.</p>
+        
+        <div id="icons"></div>
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('icons');
+
+        sizes.forEach(size => {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '30px';
+            
+            const title = document.createElement('h2');
+            title.textContent = `icon-${size}.png (${size}x${size})`;
+            wrapper.appendChild(title);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            canvas.style.width = size > 192 ? '192px' : `${size}px`;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Fondo gradiente
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#8b5cf6');
+            ctx.fillStyle = gradient;
+            
+            // Radio de esquina proporcional
+            const radius = size * 0.2;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            // Texto "OP"
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.5}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('OP', size / 2, size / 2 - size * 0.05);
+
+            // Barra inferior (indicador de construcción)
+            ctx.fillStyle = '#10b981';
+            const barHeight = size * 0.12;
+            const barY = size * 0.75;
+            ctx.beginPath();
+            ctx.roundRect(size * 0.25, barY, size * 0.5, barHeight, barHeight / 2);
+            ctx.fill();
+
+            wrapper.appendChild(canvas);
+            
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `icon-${size}.png`;
+            link.className = 'download-btn';
+            link.textContent = 'Descargar PNG';
+            wrapper.appendChild(link);
+
+            // También crear versión maskable (con padding)
+            if (size === 192 || size === 512) {
+                const maskCanvas = document.createElement('canvas');
+                maskCanvas.width = size;
+                maskCanvas.height = size;
+                const mCtx = maskCanvas.getContext('2d');
+                
+                // Fondo transparente
+                mCtx.clearRect(0, 0, size, size);
+                
+                // Ícono más pequeño para safe zone
+                const padding = size * 0.1;
+                const iconSize = size - (padding * 2);
+                
+                const mGrad = mCtx.createLinearGradient(padding, padding, size - padding, size - padding);
+                mGrad.addColorStop(0, '#3b82f6');
+                mGrad.addColorStop(1, '#8b5cf6');
+                mCtx.fillStyle = mGrad;
+                
+                const mRadius = iconSize * 0.2;
+                const cx = size / 2;
+                const cy = size / 2;
+                
+                mCtx.beginPath();
+                mCtx.moveTo(cx - iconSize/2 + mRadius, cy - iconSize/2);
+                mCtx.lineTo(cx + iconSize/2 - mRadius, cy - iconSize/2);
+                mCtx.quadraticCurveTo(cx + iconSize/2, cy - iconSize/2, cx + iconSize/2, cy - iconSize/2 + mRadius);
+                mCtx.lineTo(cx + iconSize/2, cy + iconSize/2 - mRadius);
+                mCtx.quadraticCurveTo(cx + iconSize/2, cy + iconSize/2, cx + iconSize/2 - mRadius, cy + iconSize/2);
+                mCtx.lineTo(cx - iconSize/2 + mRadius, cy + iconSize/2);
+                mCtx.quadraticCurveTo(cx - iconSize/2, cy + iconSize/2, cx - iconSize/2, cy + iconSize/2 - mRadius);
+                mCtx.lineTo(cx - iconSize/2, cy - iconSize/2 + mRadius);
+                mCtx.quadraticCurveTo(cx - iconSize/2, cy - iconSize/2, cx - iconSize/2 + mRadius, cy - iconSize/2);
+                mCtx.closePath();
+                mCtx.fill();
+
+                mCtx.fillStyle = 'white';
+                mCtx.font = `bold ${iconSize * 0.5}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                mCtx.textAlign = 'center';
+                mCtx.textBaseline = 'middle';
+                mCtx.fillText('OP', cx, cy - iconSize * 0.05);
+
+                mCtx.fillStyle = '#10b981';
+                const mBarHeight = iconSize * 0.12;
+                mCtx.beginPath();
+                mCtx.roundRect(cx - iconSize * 0.25, cy + iconSize * 0.25, iconSize * 0.5, mBarHeight, mBarHeight / 2);
+                mCtx.fill();
+
+                const maskLink = document.createElement('a');
+                maskLink.href = maskCanvas.toDataURL('image/png');
+                maskLink.download = `icon-${size}-maskable.png`;
+                maskLink.className = 'download-btn';
+                maskLink.style.background = '#8b5cf6';
+                maskLink.textContent = 'Descargar Maskable';
+                wrapper.appendChild(maskLink);
+            }
+
+            container.appendChild(wrapper);
+        });
+    </script>
+</body>
+</html>

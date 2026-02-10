@@ -1,0 +1,128 @@
+{
+  "name": "ObraPro Enterprise",
+  "short_name": "ObraPro",
+  "start_url": "/CALCULADORA-DE-MEDICIONES/index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "scope": "/CALCULADORA-DE-MEDICIONES/",
+  "icons": [
+    {
+      "src": "icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "description": "Sistema completo de gestión de obras con mediciones, horas, presupuestos, facturación, materiales y personal",
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshot2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva Medición",
+      "short_name": "Medición",
+      "description": "Registrar nueva medición de obra",
+      "url": "/CALCULADORA-DE-MEDICIONES/index.html?action=medicion",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Registrar Horas",
+      "short_name": "Horas",
+      "description": "Registrar horas trabajadas con fotos",
+      "url": "/CALCULADORA-DE-MEDICIONES/index.html?action=horas",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ver Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver resumen de obras",
+      "url": "/CALCULADORA-DE-MEDICIONES/index.html?action=dashboard",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "dir": "ltr",
+  "lang": "es",
+  "iarc_rating_id": "",
+  "share_target": {
+    "action": "/CALCULADORA-DE-MEDICIONES/share-target/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "name",
+      "text": "description",
+      "url": "link",
+      "files": [
+        {
+          "name": "media",
+          "accept": ["image/*", "video/*"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+obrapro",
+      "url": "/CALCULADORA-DE-MEDICIONES/?obra=%s"
+    }
+  ]
+}

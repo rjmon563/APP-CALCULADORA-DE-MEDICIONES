@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="ObraPro - Sistema completo de gestión de obras con mediciones, horas, presupuestos, facturación y más">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <title>ObraPro Enterprise</title>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        
+        :root {
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overscroll-behavior: none;
+            background: var(--dark);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+        }
+        
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        
+        .app-container {
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animaciones Avanzadas */
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .animate-slide-down { animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .animate-fade-in { animation: fadeIn 0.2s ease; }
+        .animate-scale-in { animation: scaleIn 0.2s ease; }
+        .animate-pulse-soft { animation: pulse 2s infinite; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        /* Cards Premium */
+        .ios-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ios-card:active { transform: scale(0.98); }
+        
+        .premium-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .premium-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Touch Elements */
+        .touch-key {
+            min-height: 64px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            transition: all 0.1s;
+            border: none;
+            font-weight: 600;
+        }
+        .touch-key:active { transform: scale(0.92); }
+        
+        .calc-display {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: #0f172a;
+            text-align: right;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            word-break: break-all;
+            line-height: 1.2;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Signature Pad */
+        .signature-pad {
+            background: white;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            touch-action: none;
+        }
+        
+        /* QR Code */
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            display: inline-block;
+        }
+        
+        /* Bottom Sheet Premium */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 30px 30px 0 0;
+            padding: 24px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+        }
+        .bottom-sheet.open { transform: translateY(0); }
+        
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 199;
+            backdrop-filter: blur(4px);
+        }
+        .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: calc(24px + env(safe-area-inset-bottom));
+            right: 24px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4);
+            z-index: 100;
+            border: none;
+            transition: all 0.3s;
+        }
+        .fab:active { transform: scale(0.9) rotate(45deg); }
+        
+        /* Toast System */
+        .toast {
+            position: fixed;
+            top: calc(80px + env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #1e293b;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 90vw;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.info { background: #3b82f6; }
+        .toast.warning { background: #f59e0b; }
+        
+        /* Photo Gallery */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .photo-thumb {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            background: #f1f5f9;
+            cursor: pointer;
+        }
+        .photo-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .photo-thumb:hover img { transform: scale(1.1); }
+        .photo-thumb .delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .photo-thumb:hover .delete { opacity: 1; }
+        
+        /* Camera Button */
+        .camera-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+        .camera-btn:active { transform: scale(0.95); }
+        
+        /* Obra Selector */
+        .obra-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .obra-chip.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Status badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-pendiente { background: #fef3c7; color: #d97706; }
+        .badge-proceso { background: #dbeafe; color: #2563eb; }
+        .badge-completado { background: #d1fae5; color: #059669; }
+        .badge-facturado { background: #e0e7ff; color: #4f46e5; }
+        .badge-pagado { background: #d1fae5; color: #059669; border: 2px solid #10b981; }
+        
+        /* Loading Effects */
+        .shimmer {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        /* Inputs Premium */
+        input, select, textarea {
+            font-size: 16px !important;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 14px 18px;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Toggle Switch */
+        .toggle {
+            width: 50px;
+            height: 28px;
+            background: #e2e8f0;
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle.active { background: #3b82f6; }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle.active::after { transform: translateX(22px); }
+        
+        /* Progress Bars */
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Photo Modal */
+        .photo-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .photo-modal.open { opacity: 1; pointer-events: auto; }
+        .photo-modal img {
+            max-width: 95%;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        /* Menu Grid */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 20px;
+        }
+        .menu-item {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .menu-item:active { transform: scale(0.95); }
+        .menu-item svg {
+            width: 32px;
+            height: 32px;
+            color: #3b82f6;
+        }
+        .menu-item span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            text-align: center;
+        }
+        
+        /* Sync Status */
+        .sync-indicator {
+            position: fixed;
+            top: calc(60px + env(safe-area-inset-top));
+            right: 16px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+        .sync-online { background: #d1fae5; color: #059669; }
+        .sync-offline { background: #fee2e2; color: #dc2626; }
+        .sync-syncing { background: #fef3c7; color: #d97706; }
+        
+        /* Charts Container */
+        .chart-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        
+        /* Invoice Preview */
+        .invoice-preview {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="root" class="app-container safe-top safe-bottom"></div>
+    <div id="toast" class="toast"></div>
+    <div id="sync-indicator" class="sync-indicator sync-offline" style="display: none;">
+        <span class="sync-dot">●</span>
+        <span class="sync-text">Offline</span>
+    </div>
+
+    <script>
+        // Firebase Config - REEMPLAZA CON TUS DATOS
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        let db, storage, auth, firebaseEnabled = false;
+        
+        try {
+            if (firebaseConfig.apiKey !== "TU_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                storage = firebase.storage();
+                auth = firebase.auth();
+                firebaseEnabled = true;
+            }
+        } catch (e) {
+            console.log("Modo offline activado");
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registrado'))
+                .catch(err => console.log('SW error:', err));
+        }
+
+        // Utilidades Globales
+        window.showToast = (msg, type = 'success', duration = 3000) => {
+            const toast = document.getElementById('toast');
+            const icons = {
+                success: '✓',
+                error: '✕',
+                info: 'ℹ',
+                warning: '⚠',
+                sync: '↻'
+            };
+            toast.innerHTML = `<span style="font-size: 20px;">${icons[type]}</span> ${msg}`;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), duration);
+        };
+
+        window.updateSyncStatus = (status) => {
+            const indicator = document.getElementById('sync-indicator');
+            const texts = { online: 'En línea', offline: 'Sin conexión', syncing: 'Sincronizando...' };
+            const classes = { online: 'sync-online', offline: 'sync-offline', syncing: 'sync-syncing' };
+            
+            indicator.style.display = 'flex';
+            indicator.className = `sync-indicator ${classes[status]}`;
+            indicator.querySelector('.sync-text').textContent = texts[status];
+        };
+
+        // Geolocalización
+        window.getCurrentPosition = () => {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject('Geolocalización no soportada');
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve({
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        accuracy: pos.coords.accuracy
+                    }),
+                    err => reject(err.message),
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            });
+        };
+
+        document.addEventListener('gesturestart', e => e.preventDefault());
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
+        // ==================== DATABASE AVANZADA ====================
+        const Database = {
+            db: null,
+            
+            async init() {
+                if (this.db) return this.db;
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('ObraProEnterprise', 3);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve(this.db);
+                    };
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        const stores = ['obras', 'mediciones', 'horas', 'fotos', 'materiales', 'personal', 'facturas', 'presupuestos', 'gastos', 'sync', 'usuarios'];
+                        stores.forEach(store => {
+                            if (!db.objectStoreNames.contains(store)) {
+                                const s = db.createObjectStore(store, { keyPath: 'id' });
+                                if (store !== 'sync' && store !== 'usuarios') {
+                                    s.createIndex('obraId', 'obraId', { unique: false });
+                                }
+                            }
+                        });
+                    };
+                });
+            },
+
+            async save(store, data) {
+                const db = await this.init();
+                data.updatedAt = Date.now();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction([store], 'readwrite');
+                    const s = tx.objectStore(store);
+                    const req = s.put(data);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+
+                if (firebaseEnabled && !data.synced) {
+                    await this.markForSync(store, data.id);
+                }
+                return data;
+            },
+
+            async getAll(store, indexName, indexValue) {
+                const db = await this.init();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction([store], 'readonly');
+                    const s = tx.objectStore(store);
+                    let req;
+                    if (indexName && indexValue) {
+                        req = s.index(indexName).getAll(indexValue);
+                    } else {
+                        req = s.getAll();
+                    }
+                    req.onsuccess = () => resolve(req.result.reverse());
+                    req.onerror = () => reject(req.error);
+                });
+            },
+
+            async delete(store, id) {
+                const db = await this.init();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction([store], 'readwrite');
+                    const req = tx.objectStore(store).delete(id);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+                if (firebaseEnabled) await this.markForSync(store, id, 'delete');
+            },
+
+            async markForSync(store, id, action = 'save') {
+                const db = await this.init();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(['sync'], 'readwrite');
+                    tx.objectStore('sync').put({
+                        id: `${store}_${id}_${Date.now()}`,
+                        store, itemId: id, action, timestamp: Date.now()
+                    });
+                });
+            },
+
+            async exportAllData() {
+                const stores = ['obras', 'mediciones', 'horas', 'fotos', 'materiales', 'personal', 'facturas', 'presupuestos', 'gastos'];
+                const data = {};
+                for (const store of stores) {
+                    data[store] = await this.getAll(store);
+                }
+                return data;
+            },
+
+            async importData(data) {
+                for (const [store, items] of Object.entries(data)) {
+                    for (const item of items) {
+                        await this.save(store, item);
+                    }
+                }
+            }
+        };
+
+        // ==================== COMPONENTE PRINCIPAL ====================
+        function App() {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [obraActual, setObraActual] = useState(null);
+            const [obras, setObras] = useState([]);
+            const [vista, setVista] = useState('dashboard'); // dashboard, mediciones, horas, materiales, personal, facturas, gastos, reportes, config
+            const [showForm, setShowForm] = useState(false);
+            const [showObraForm, setShowObraForm] = useState(false);
+            const [showPhotoModal, setShowPhotoModal] = useState(null);
+            const [showSignaturePad, setShowSignaturePad] = useState(false);
+            
+            // Datos
+            const [mediciones, setMediciones] = useState([]);
+            const [horas, setHoras] = useState([]);
+            const [materiales, setMateriales] = useState([]);
+            const [personal, setPersonal] = useState([]);
+            const [facturas, setFacturas] = useState([]);
+            const [gastos, setGastos] = useState([]);
+            const [stats, setStats] = useState({});
+            
+            // Forms
+            const [medForm, setMedForm] = useState({ tipo: 'Tabique', desc: '', valor: '', mult: '', unidad: 'm', precio: '' });
+            const [horaForm, setHoraForm] = useState({ desc: '', inicio: '', fin: '', fecha: new Date().toISOString().split('T')[0], descanso: 0, fotos: [], ubicacion: null });
+            const [obraForm, setObraForm] = useState({ nombre: '', cliente: '', direccion: '', telefono: '', email: '', fechaInicio: '', fechaFin: '', presupuesto: '' });
+            const [materialForm, setMaterialForm] = useState({ nombre: '', cantidad: '', unidad: '', precioUnitario: '', proveedor: '' });
+            const [personalForm, setPersonalForm] = useState({ nombre: '', cargo: '', telefono: '', salarioDia: '', tipo: 'empleado' });
+            const [gastoForm, setGastoForm] = useState({ concepto: '', monto: '', categoria: 'material', fecha: new Date().toISOString().split('T')[0], comprobante: null });
+            
+            const signatureRef = useRef(null);
+            const chartRef = useRef(null);
+
+            useEffect(() => {
+                initApp();
+                const onlineHandler = () => {
+                    window.updateSyncStatus('online');
+                    syncData();
+                };
+                const offlineHandler = () => window.updateSyncStatus('offline');
+                
+                window.addEventListener('online', onlineHandler);
+                window.addEventListener('offline', offlineHandler);
+                
+                const syncInterval = setInterval(() => {
+                    if (navigator.onLine) syncData();
+                }, 60000);
+
+                return () => {
+                    window.removeEventListener('online', onlineHandler);
+                    window.removeEventListener('offline', offlineHandler);
+                    clearInterval(syncInterval);
+                };
+            }, []);
+
+            const initApp = async () => {
+                try {
+                    // Verificar usuario
+                    const savedUser = localStorage.getItem('obrapro_user');
+                    if (savedUser) setUser(JSON.parse(savedUser));
+                    
+                    const obrasData = await Database.getAll('obras');
+                    setObras(obrasData);
+                    if (obrasData.length > 0 && !obraActual) {
+                        setObraActual(obrasData[0]);
+                        await cargarDatosObra(obrasData[0].id);
+                    }
+                } catch (e) {
+                    console.error('Init error:', e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const cargarDatosObra = async (obraId) => {
+                if (!obraId) return;
+                setLoading(true);
+                try {
+                    const [meds, hrs, mats, pers, facts, gast] = await Promise.all([
+                        Database.getAll('mediciones', 'obraId', obraId),
+                        Database.getAll('horas', 'obraId', obraId),
+                        Database.getAll('materiales', 'obraId', obraId),
+                        Database.getAll('personal', 'obraId', obraId),
+                        Database.getAll('facturas', 'obraId', obraId),
+                        Database.getAll('gastos', 'obraId', obraId)
+                    ]);
+
+                    // Cargar fotos para horas
+                    const horasConFotos = await Promise.all(hrs.map(async (h) => {
+                        const fotos = await Database.getAll('fotos', 'horaId', h.id);
+                        return { ...h, fotos };
+                    }));
+
+                    setMediciones(meds);
+                    setHoras(horasConFotos);
+                    setMateriales(mats);
+                    setPersonal(pers);
+                    setFacturas(facts);
+                    setGastos(gast);
+                    
+                    calcularStats(meds, horasConFotos, mats, pers, facts, gast);
+                } catch (e) {
+                    console.error('Error cargando datos:', e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const calcularStats = (meds, hrs, mats, pers, facts, gast) => {
+                const stats = {
+                    // Mediciones
+                    totalML: meds.reduce((a, b) => a + parseFloat(b.totalL), 0),
+                    totalM2: meds.reduce((a, b) => a + parseFloat(b.totalS), 0),
+                    totalVentaMediciones: meds.reduce((a, b) => a + parseFloat(b.totalPrecio || 0), 0),
+                    
+                    // Horas
+                    totalHoras: hrs.reduce((a, b) => a + parseFloat(b.total), 0),
+                    costoHoras: hrs.reduce((a, b) => a + (parseFloat(b.costoTotal || 0)), 0),
+                    
+                    // Materiales
+                    totalMateriales: mats.reduce((a, b) => a + (parseFloat(b.cantidad) * parseFloat(b.precioUnitario)), 0),
+                    
+                    // Gastos
+                    totalGastos: gast.reduce((a, b) => a + parseFloat(b.monto), 0),
+                    
+                    // Facturación
+                    totalFacturado: facts.filter(f => f.estado === 'pagada').reduce((a, b) => a + parseFloat(b.total), 0),
+                    totalPendiente: facts.filter(f => f.estado !== 'pagada').reduce((a, b) => a + parseFloat(b.total), 0),
+                    
+                    // Por tipo
+                    porTipo: {},
+                    progreso: 0
+                };
+
+                ['Tabique', 'Techo', 'Cajón ML', 'Tabica', 'Cantonera', 'Muro', 'Piso'].forEach(t => {
+                    const filtrados = meds.filter(m => m.tipo === t);
+                    stats.porTipo[t] = {
+                        ml: filtrados.reduce((a, b) => a + parseFloat(b.totalL), 0),
+                        m2: filtrados.reduce((a, b) => a + parseFloat(b.totalS), 0),
+                        count: filtrados.length
+                    };
+                });
+
+                // Calcular progreso si hay presupuesto
+                if (obraActual?.presupuesto) {
+                    const ejecutado = stats.totalVentaMediciones + stats.totalGastos + stats.costoHoras;
+                    stats.progreso = Math.min((ejecutado / parseFloat(obraActual.presupuesto)) * 100, 100);
+                }
+
+                setStats(stats);
+            };
+
+            const login = async (email, password) => {
+                // Simulación - en producción usar Firebase Auth
+                const user = { id: '1', email, nombre: 'Administrador', empresa: 'Buen Camino' };
+                localStorage.setItem('obrapro_user', JSON.stringify(user));
+                setUser(user);
+                window.showToast('Bienvenido a ObraPro');
+            };
+
+            const logout = () => {
+                localStorage.removeItem('obrapro_user');
+                setUser(null);
+            };
+
+            const crearObra = async () => {
+                if (!obraForm.nombre) {
+                    window.showToast('El nombre es obligatorio', 'error');
+                    return;
+                }
+
+                const nuevaObra = {
+                    id: 'obra_' + Date.now(),
+                    ...obraForm,
+                    fechaCreacion: new Date().toISOString(),
+                    estado: 'activa',
+                    progreso: 0,
+                    userId: user?.id || 'local'
+                };
+
+                await Database.save('obras', nuevaObra);
+                setObras([...obras, nuevaObra]);
+                setObraActual(nuevaObra);
+                setShowObraForm(false);
+                setObraForm({ nombre: '', cliente: '', direccion: '', telefono: '', email: '', fechaInicio: '', fechaFin: '', presupuesto: '' });
+                window.showToast('Obra creada exitosamente');
+                await cargarDatosObra(nuevaObra.id);
+            };
+
+            const guardarMedicion = async () => {
+                if (!obraActual) return;
+                if (!medForm.valor) {
+                    window.showToast('Ingresa una medida', 'error');
+                    return;
+                }
+
+                const suma = medForm.valor.split('+').reduce((a, b) => a + (parseFloat(b) || 0), 0);
+                const mult = parseFloat(medForm.mult) || 0;
+                const precio = parseFloat(medForm.precio) || 0;
+
+                const medicion = {
+                    id: 'med_' + Date.now(),
+                    obraId: obraActual.id,
+                    tipo: medForm.tipo,
+                    desc: medForm.desc || 'Sin descripción',
+                    valor: medForm.valor,
+                    mult,
+                    unidad: medForm.unidad,
+                    totalL: suma.toFixed(2),
+                    totalS: (suma * mult).toFixed(2),
+                    precio,
+                    totalPrecio: (suma * mult * precio).toFixed(2),
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    timestamp: Date.now()
+                };
+
+                await Database.save('mediciones', medicion);
+                await cargarDatosObra(obraActual.id);
+                setMedForm({ tipo: medForm.tipo, desc: '', valor: '', mult: '', unidad: medForm.unidad, precio: '' });
+                setShowForm(false);
+                window.showToast('Medición guardada');
+            };
+
+            const guardarHora = async () => {
+                if (!obraActual) return;
+                if (!horaForm.inicio || !horaForm.fin) {
+                    window.showToast('Ingresa horas válidas', 'error');
+                    return;
+                }
+
+                // Calcular horas
+                const inicio = new Date(`2000-01-01T${horaForm.inicio}`);
+                const fin = new Date(`2000-01-01T${horaForm.fin}`);
+                let horas = (fin - inicio) / 3600000;
+                horas -= (parseFloat(horaForm.descanso) || 0) / 60;
+
+                if (horas <= 0) {
+                    window.showToast('Hora fin debe ser mayor', 'error');
+                    return;
+                }
+
+                // Obtener ubicación
+                let ubicacion = null;
+                try {
+                    ubicacion = await window.getCurrentPosition();
+                } catch (e) {
+                    console.log('Sin ubicación:', e);
+                }
+
+                const hora = {
+                    id: 'hora_' + Date.now(),
+                    obraId: obraActual.id,
+                    desc: horaForm.desc || 'Sin descripción',
+                    inicio: horaForm.inicio,
+                    fin: horaForm.fin,
+                    fecha: horaForm.fecha,
+                    descanso: horaForm.descanso,
+                    total: horas.toFixed(2),
+                    fotos: horaForm.fotos.length,
+                    ubicacion,
+                    timestamp: Date.now()
+                };
+
+                await Database.save('horas', hora);
+
+                // Guardar fotos
+                for (let i = 0; i < horaForm.fotos.length; i++) {
+                    await Database.save('fotos', {
+                        id: `foto_${hora.id}_${i}`,
+                        horaId: hora.id,
+                        obraId: obraActual.id,
+                        data: horaForm.fotos[i],
+                        timestamp: Date.now()
+                    });
+                }
+
+                await cargarDatosObra(obraActual.id);
+                setHoraForm({ desc: '', inicio: '', fin: '', fecha: new Date().toISOString().split('T')[0], descanso: 0, fotos: [], ubicacion: null });
+                setShowForm(false);
+                window.showToast(`Guardado: ${horas.toFixed(2)} horas`);
+            };
+
+            const guardarMaterial = async () => {
+                if (!obraActual) return;
+                if (!materialForm.nombre || !materialForm.cantidad) {
+                    window.showToast('Completa los datos del material', 'error');
+                    return;
+                }
+
+                const material = {
+                    id: 'mat_' + Date.now(),
+                    obraId: obraActual.id,
+                    ...materialForm,
+                    total: (parseFloat(materialForm.cantidad) * parseFloat(materialForm.precioUnitario || 0)).toFixed(2),
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    timestamp: Date.now()
+                };
+
+                await Database.save('materiales', material);
+                await cargarDatosObra(obraActual.id);
+                setMaterialForm({ nombre: '', cantidad: '', unidad: '', precioUnitario: '', proveedor: '' });
+                setShowForm(false);
+                window.showToast('Material registrado');
+            };
+
+            const guardarPersonal = async () => {
+                if (!obraActual) return;
+                if (!personalForm.nombre || !personalForm.cargo) {
+                    window.showToast('Nombre y cargo son obligatorios', 'error');
+                    return;
+                }
+
+                const person = {
+                    id: 'pers_' + Date.now(),
+                    obraId: obraActual.id,
+                    ...personalForm,
+                    fechaRegistro: new Date().toLocaleDateString('es-ES'),
+                    timestamp: Date.now()
+                };
+
+                await Database.save('personal', person);
+                await cargarDatosObra(obraActual.id);
+                setPersonalForm({ nombre: '', cargo: '', telefono: '', salarioDia: '', tipo: 'empleado' });
+                setShowForm(false);
+                window.showToast('Personal registrado');
+            };
+
+            const guardarGasto = async () => {
+                if (!obraActual) return;
+                if (!gastoForm.concepto || !gastoForm.monto) {
+                    window.showToast('Concepto y monto son obligatorios', 'error');
+                    return;
+                }
+
+                const gasto = {
+                    id: 'gasto_' + Date.now(),
+                    obraId: obraActual.id,
+                    ...gastoForm,
+                    fecha: gastoForm.fecha || new Date().toISOString().split('T')[0],
+                    timestamp: Date.now()
+                };
+
+                await Database.save('gastos', gasto);
+                await cargarDatosObra(obraActual.id);
+                setGastoForm({ concepto: '', monto: '', categoria: 'material', fecha: new Date().toISOString().split('T')[0], comprobante: null });
+                setShowForm(false);
+                window.showToast('Gasto registrado');
+            };
+
+            const generarFactura = async () => {
+                if (!obraActual) return;
+                
+                const factura = {
+                    id: 'fact_' + Date.now(),
+                    obraId: obraActual.id,
+                    numero: `F-${Date.now().toString().slice(-6)}`,
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    cliente: obraActual.cliente,
+                    concepto: `Trabajos de construcción - ${obraActual.nombre}`,
+                    subtotal: stats.totalVentaMediciones,
+                    iva: (stats.totalVentaMediciones * 0.16).toFixed(2),
+                    total: (stats.totalVentaMediciones * 1.16).toFixed(2),
+                    estado: 'pendiente',
+                    items: mediciones.map(m => ({
+                        descripcion: `${m.tipo} - ${m.desc}`,
+                        cantidad: m.totalS,
+                        precio: m.precio,
+                        total: m.totalPrecio
+                    })),
+                    timestamp: Date.now()
+                };
+
+                await Database.save('facturas', factura);
+                await cargarDatosObra(obraActual.id);
+                window.showToast(`Factura ${factura.numero} generada`);
+                return factura;
+            };
+
+            const tomarFoto = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'environment';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 10 * 1024 * 1024) {
+                        window.showToast('Foto muy grande (máx 10MB)', 'error');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setHoraForm(prev => ({ ...prev, fotos: [...prev.fotos, reader.result] }));
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            };
+
+            const eliminarFoto = (index) => {
+                setHoraForm(prev => ({
+                    ...prev,
+                    fotos: prev.fotos.filter((_, i) => i !== index)
+                }));
+            };
+
+            const eliminarItem = async (tipo, id) => {
+                if (!confirm('¿Eliminar permanentemente?')) return;
+                await Database.delete(tipo, id);
+                if (tipo === 'horas') {
+                    const fotos = await Database.getAll('fotos', 'horaId', id);
+                    for (const f of fotos) await Database.delete('fotos', f.id);
+                }
+                await cargarDatosObra(obraActual.id);
+                window.showToast('Eliminado correctamente');
+            };
+
+            const exportarPDF = async (tipo = 'completo') => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Header profesional
+                doc.setFillColor(15, 23, 42);
+                doc.rect(0, 0, 210, 50, 'F');
+                
+                // Logo placeholder
+                doc.setTextColor(59, 130, 246);
+                doc.setFontSize(30);
+                doc.text('OP', 20, 30);
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+                doc.text('OBRA PRO', 45, 28);
+                doc.setFontSize(10);
+                doc.setTextColor(148, 163, 184);
+                doc.text('Sistema de Gestión de Obras', 45, 36);
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(12);
+                doc.text(obraActual?.nombre || 'INFORME', 190, 25, { align: 'right' });
+                doc.setFontSize(9);
+                doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 190, 32, { align: 'right' });
+                doc.text(`Cliente: ${obraActual?.cliente || 'N/A'}`, 190, 38, { align: 'right' });
+
+                let y = 65;
+
+                if (tipo === 'completo' || tipo === 'resumen') {
+                    // Dashboard Ejecutivo
+                    doc.setFillColor(241, 245, 249);
+                    doc.roundedRect(10, y, 190, 50, 5, 5, 'F');
+                    
+                    doc.setFontSize(11);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('RESUMEN EJECUTIVO', 15, y + 10);
+                    
+                    const datos = [
+                        ['Total Mediciones:', `${stats.totalML?.toFixed(2)} ml / ${stats.totalVentaMediciones?.toFixed(2)} m²`],
+                        ['Horas Trabajadas:', `${stats.totalHoras?.toFixed(2)}h`],
+                        ['Materiales:', `$${stats.totalMateriales?.toFixed(2)}`],
+                        ['Gastos:', `$${stats.totalGastos?.toFixed(2)}`],
+                        ['Total Facturado:', `$${stats.totalFacturado?.toFixed(2)}`]
+                    ];
+
+                    doc.setFontSize(10);
+                    datos.forEach((d, i) => {
+                        doc.setTextColor(100, 100, 100);
+                        doc.text(d[0], 20, y + 22 + (i * 7));
+                        doc.setTextColor(15, 23, 42);
+                        doc.text(d[1], 80, y + 22 + (i * 7));
+                    });
+
+                    y += 60;
+                }
+
+                if ((tipo === 'completo' || tipo === 'mediciones') && mediciones.length > 0) {
+                    doc.setFontSize(14);
+                    doc.setTextColor(37, 99, 235);
+                    doc.text('MEDICIONES DETALLADAS', 14, y);
+                    y += 10;
+
+                    doc.autoTable({
+                        head: [['Fecha', 'Tipo', 'Descripción', 'Medida', 'm²', 'Precio', 'Total']],
+                        body: mediciones.map(m => [
+                            m.fecha,
+                            m.tipo,
+                            m.desc.substring(0, 25),
+                            `${m.valor}${m.mult ? `×${m.mult}` : ''}`,
+                            m.totalS,
+                            m.precio ? `$${m.precio}` : '-',
+                            m.totalPrecio ? `$${m.totalPrecio}` : '-'
+                        ]),
+                        startY: y,
+                        theme: 'striped',
+                        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontSize: 9 },
+                        bodyStyles: { fontSize: 8 },
+                        margin: { left: 10, right: 10 }
+                    });
+                    y = doc.lastAutoTable.finalY + 15;
+                }
+
+                if ((tipo === 'completo' || tipo === 'horas') && horas.length > 0) {
+                    doc.setFontSize(14);
+                    doc.setTextColor(16, 185, 129);
+                    doc.text('REGISTRO DE HORAS', 14, y);
+                    y += 10;
+
+                    doc.autoTable({
+                        head: [['Fecha', 'Descripción', 'Horario', 'Horas', 'Fotos']],
+                        body: horas.map(h => [
+                            h.fecha,
+                            h.desc.substring(0, 30),
+                            `${h.inicio}-${h.fin}`,
+                            h.total,
+                            h.fotos > 0 ? `${h.fotos} 📷` : '-'
+                        ]),
+                        startY: y,
+                        theme: 'striped',
+                        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontSize: 9 },
+                        bodyStyles: { fontSize: 8 }
+                    });
+                    y = doc.lastAutoTable.finalY + 15;
+                }
+
+                // Footer
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Documento generado por ObraPro Enterprise - www.obrapro.com', 105, 285, { align: 'center' });
+                doc.text(`Página 1 de 1 - ${new Date().toLocaleString('es-ES')}`, 105, 290, { align: 'center' });
+
+                const filename = `ObraPro_${obraActual?.nombre || 'informe'}_${new Date().toISOString().split('T')[0]}.pdf`;
+                
+                if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    const pdfOutput = doc.output('datauristring');
+                    window.open(pdfOutput, '_blank');
+                } else {
+                    doc.save(filename);
+                }
+                
+                window.showToast('PDF generado correctamente');
+            };
+
+            const exportarExcel = () => {
+                const wb = XLSX.utils.book_new();
+                
+                // Hojas de datos
+                if (mediciones.length > 0) {
+                    const ws1 = XLSX.utils.json_to_sheet(mediciones.map(m => ({
+                        Fecha: m.fecha, Tipo: m.tipo, Descripción: m.desc,
+                        Medida: m.valor, Multiplicador: m.mult,
+                        'Metros Lineales': m.totalL, 'Metros Cuadrados': m.totalS,
+                        'Precio Unit': m.precio, Total: m.totalPrecio
+                    })));
+                    XLSX.utils.book_append_sheet(wb, ws1, "Mediciones");
+                }
+
+                if (horas.length > 0) {
+                    const ws2 = XLSX.utils.json_to_sheet(horas.map(h => ({
+                        Fecha: h.fecha, Descripción: h.desc,
+                        Inicio: h.inicio, Fin: h.fin, Descanso: h.descanso,
+                        Total: h.total, Fotos: h.fotos,
+                        Ubicación: h.ubicacion ? `${h.ubicacion.lat},${h.ubicacion.lng}` : ''
+                    })));
+                    XLSX.utils.book_append_sheet(wb, ws2, "Horas");
+                }
+
+                if (materiales.length > 0) {
+                    const ws3 = XLSX.utils.json_to_sheet(materiales.map(m => ({
+                        Fecha: m.fecha, Material: m.nombre,
+                        Cantidad: m.cantidad, Unidad: m.unidad,
+                        'Precio Unit': m.precioUnitario, Total: m.total,
+                        Proveedor: m.proveedor
+                    })));
+                    XLSX.utils.book_append_sheet(wb, ws3, "Materiales");
+                }
+
+                if (gastos.length > 0) {
+                    const ws4 = XLSX.utils.json_to_sheet(gastos.map(g => ({
+                        Fecha: g.fecha, Concepto: g.concepto,
+                        Categoría: g.categoria, Monto: g.monto
+                    })));
+                    XLSX.utils.book_append_sheet(wb, ws4, "Gastos");
+                }
+
+                XLSX.writeFile(wb, `ObraPro_${obraActual?.nombre}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                window.showToast('Excel descargado');
+            };
+
+            const compartirWhatsApp = () => {
+                const resumen = `*📊 INFORME OBRA: ${obraActual?.nombre}*\n\n` +
+                    `👤 *Cliente:* ${obraActual?.cliente || 'N/A'}\n` +
+                    `📍 *Dirección:* ${obraActual?.direccion || 'N/A'}\n\n` +
+                    `📏 *Mediciones:*\n` +
+                    `   ${stats.totalML?.toFixed(2)} ml\n` +
+                    `   ${stats.totalM2?.toFixed(2)} m²\n` +
+                    `   $${stats.totalVentaMediciones?.toFixed(2)}\n\n` +
+                    `⏱️ *Horas:* ${stats.totalHoras?.toFixed(2)}h\n` +
+                    `📦 *Materiales:* $${stats.totalMateriales?.toFixed(2)}\n` +
+                    `💸 *Gastos:* $${stats.totalGastos?.toFixed(2)}\n\n` +
+                    `💰 *TOTAL:* $${(stats.totalVentaMediciones + stats.totalMateriales + stats.totalGastos).toFixed(2)}\n\n` +
+                    `_Enviado desde ObraPro Enterprise_`;
+                
+                window.open(`https://wa.me/?text=${encodeURIComponent(resumen)}`, '_blank');
+            };
+
+            const backupDatos = async () => {
+                const datos = await Database.exportAllData();
+                const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_obrapro_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                window.showToast('Backup descargado');
+            };
+
+            const restaurarDatos = (file) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const datos = JSON.parse(e.target.result);
+                        await Database.importData(datos);
+                        await initApp();
+                        window.showToast('Datos restaurados correctamente');
+                    } catch (err) {
+                        window.showToast('Error al restaurar', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            // ==================== RENDERIZADO ====================
+
+            if (loading) {
+                return (
+                    <div className="flex-1 flex items-center justify-center text-white">
+                        <div className="text-center animate-float">
+                            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-2xl">
+                                <svg width="50" height="50" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <p className="font-black text-2xl mb-2">ObraPro</p>
+                            <p className="text-slate-400">Cargando sistema...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!user) {
+                return <LoginScreen onLogin={login} />;
+            }
+
+            return (
+                <>
+                    {/* Header Premium */}
+                    <header className="glass-dark text-white px-4 py-3 z-40 border-b border-slate-800">
+                        <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <span className="font-black text-xl">OP</span>
+                                </div>
+                                <div>
+                                    <h1 className="font-black text-lg leading-tight">ObraPro</h1>
+                                    <p className="text-xs text-slate-400">Enterprise</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={compartirWhatsApp} className="p-2.5 bg-green-500/20 text-green-400 rounded-xl hover:bg-green-500/30 transition">
+                                    <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                </button>
+                                <button onClick={() => setVista('config')} className="p-2.5 bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition">
+                                    <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Selector de Obra */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                            {obras.map(obra => (
+                                <button 
+                                    key={obra.id}
+                                    onClick={() => { setObraActual(obra); cargarDatosObra(obra.id); }}
+                                    className={`obra-chip ${obraActual?.id === obra.id ? 'active' : ''}`}
+                                >
+                                    {obra.nombre}
+                                    {obraActual?.id === obra.id && <span className="w-2 h-2 bg-white rounded-full ml-1 animate-pulse"></span>}
+                                </button>
+                            ))}
+                            <button onClick={() => setShowObraForm(true)} className="obra-chip bg-slate-800 text-slate-400 border-slate-700">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                                Nueva
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Menú Principal */}
+                    {vista === 'dashboard' && (
+                        <main className="flex-1 overflow-y-auto no-scrollbar p-4">
+                            {!obraActual ? (
+                                <div className="empty-state text-white">
+                                    <svg fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                                    <p className="text-xl font-bold mb-2">Bienvenido a ObraPro</p>
+                                    <p className="mb-6">Crea tu primera obra para comenzar</p>
+                                    <button onClick={() => setShowObraForm(true)} className="px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30">
+                                        Crear Primera Obra
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Card Principal */}
+                                    <div className="premium-card p-5">
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <p className="text-blue-200 text-sm mb-1">PROGRESO DE OBRA</p>
+                                                    <h2 className="text-2xl font-black">{obraActual.nombre}</h2>
+                                                </div>
+                                                <span className={`badge ${stats.progreso >= 100 ? 'badge-completado' : stats.progreso > 50 ? 'badge-proceso' : 'badge-pendiente'}`}>
+                                                    {stats.progreso >= 100 ? 'Completado' : stats.progreso > 50 ? 'En Proceso' : 'Iniciado'}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="mb-2 flex justify-between text-sm">
+                                                <span className="text-blue-200">Ejecutado</span>
+                                                <span className="font-bold">{stats.progreso?.toFixed(1)}%</span>
+                                            </div>
+                                            <div className="progress-bar bg-white/20">
+                                                <div className="progress-fill bg-white" style={{width: `${stats.progreso || 0}%`}}></div>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-3 gap-4 mt-6">
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-black">${(stats.totalVentaMediciones + stats.totalMateriales + stats.totalGastos).toFixed(0)}</p>
+                                                    <p className="text-xs text-blue-200">Ejecutado</p>
+                                                </div>
+                                                <div className="text-center border-x border-white/20">
+                                                    <p className="text-2xl font-black">${parseFloat(obraActual.presupuesto || 0).toFixed(0)}</p>
+                                                    <p className="text-xs text-blue-200">Presupuesto</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-black text-emerald-300">${stats.totalFacturado?.toFixed(0)}</p>
+                                                    <p className="text-xs text-blue-200">Facturado</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Grid de Módulos */}
+                                    <div className="menu-grid">
+                                        <div className="menu-item" onClick={() => setVista('mediciones')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                            <span>Mediciones</span>
+                                            {mediciones.length > 0 && <span className="absolute top-2 right-2 bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{mediciones.length}</span>}
+                                        </div>
+                                        <div className="menu-item" onClick={() => setVista('horas')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                            <span>Horas</span>
+                                            {horas.length > 0 && <span className="absolute top-2 right-2 bg-emerald-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{horas.length}</span>}
+                                        </div>
+                                        <div className="menu-item" onClick={() => setVista('materiales')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                            <span>Materiales</span>
+                                        </div>
+                                        <div className="menu-item" onClick={() => setVista('personal')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                            <span>Personal</span>
+                                        </div>
+                                        <div className="menu-item" onClick={() => setVista('gastos')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span>Gastos</span>
+                                        </div>
+                                        <div className="menu-item" onClick={() => setVista('facturas')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            <span>Facturas</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Acciones Rápidas */}
+                                    <div className="ios-card p-4">
+                                        <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Acciones Rápidas</h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => exportarPDF('completo')} className="p-3 bg-slate-100 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700">
+                                                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                PDF Completo
+                                            </button>
+                                            <button onClick={exportarExcel} className="p-3 bg-slate-100 rounded-xl flex items-center justify-center gap-2 font-bold text-slate-700">
+                                                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                Excel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+                    )}
+
+                    {/* Vistas Específicas */}
+                    {vista === 'mediciones' && (
+                        <VistaMediciones 
+                            mediciones={mediciones} 
+                            stats={stats} 
+                            onBack={() => setVista('dashboard')}
+                            onAdd={() => { setShowForm(true); setVista('dashboard'); }}
+                            onDelete={(id) => eliminarItem('mediciones', id)}
+                        />
+                    )}
+
+                    {vista === 'horas' && (
+                        <VistaHoras 
+                            horas={horas} 
+                            stats={stats}
+                            onBack={() => setVista('dashboard')}
+                            onAdd={() => { setShowForm(true); setVista('dashboard'); }}
+                            onDelete={(id) => eliminarItem('horas', id)}
+                            onViewPhoto={setShowPhotoModal}
+                        />
+                    )}
+
+                    {vista === 'materiales' && (
+                        <VistaMateriales 
+                            materiales={materiales}
+                            onBack={() => setVista('dashboard')}
+                            onAdd={() => { setShowForm(true); setVista('dashboard'); }}
+                            onDelete={(id) => eliminarItem('materiales', id)}
+                        />
+                    )}
+
+                    {vista === 'personal' && (
+                        <VistaPersonal 
+                            personal={personal}
+                            onBack={() => setVista('dashboard')}
+                            onAdd={() => { setShowForm(true); setVista('dashboard'); }}
+                            onDelete={(id) => eliminarItem('personal', id)}
+                        />
+                    )}
+
+                    {vista === 'gastos' && (
+                        <VistaGastos 
+                            gastos={gastos}
+                            stats={stats}
+                            onBack={() => setVista('dashboard')}
+                            onAdd={() => { setShowForm(true); setVista('dashboard'); }}
+                            onDelete={(id) => eliminarItem('gastos', id)}
+                        />
+                    )}
+
+                    {vista === 'facturas' && (
+                        <VistaFacturas 
+                            facturas={facturas}
+                            stats={stats}
+                            onBack={() => setVista('dashboard')}
+                            onGenerate={generarFactura}
+                            onExport={() => exportarPDF('factura')}
+                        />
+                    )}
+
+                    {vista === 'config' && (
+                        <VistaConfig 
+                            user={user}
+                            onBack={() => setVista('dashboard')}
+                            onLogout={logout}
+                            onBackup={backupDatos}
+                            onRestore={restaurarDatos}
+                        />
+                    )}
+
+                    {/* FAB */}
+                    {obraActual && vista === 'dashboard' && (
+                        <button onClick={() => setShowForm(true)} className="fab">
+                            <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                    )}
+
+                    {/* Modal Nueva Obra */}
+                    <Modal isOpen={showObraForm} onClose={() => setShowObraForm(false)} title="Nueva Obra">
+                        <div className="space-y-4">
+                            <input placeholder="Nombre de la obra *" value={obraForm.nombre} onChange={e => setObraForm({...obraForm, nombre: e.target.value})} />
+                            <input placeholder="Nombre del cliente" value={obraForm.cliente} onChange={e => setObraForm({...obraForm, cliente: e.target.value})} />
+                            <input placeholder="Dirección" value={obraForm.direccion} onChange={e => setObraForm({...obraForm, direccion: e.target.value})} />
+                            <input placeholder="Teléfono" value={obraForm.telefono} onChange={e => setObraForm({...obraForm, telefono: e.target.value})} />
+                            <input placeholder="Email" type="email" value={obraForm.email} onChange={e => setObraForm({...obraForm, email: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Inicio</label>
+                                    <input type="date" value={obraForm.fechaInicio} onChange={e => setObraForm({...obraForm, fechaInicio: e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Fin Estimado</label>
+                                    <input type="date" value={obraForm.fechaFin} onChange={e => setObraForm({...obraForm, fechaFin: e.target.value})} />
+                                </div>
+                            </div>
+                            <input placeholder="Presupuesto total ($)" type="number" value={obraForm.presupuesto} onChange={e => setObraForm({...obraForm, presupuesto: e.target.value})} />
+                            <button onClick={crearObra} className="w-full py-4 bg-blue-600 text-white font-black rounded-xl shadow-lg">CREAR OBRA</button>
+                        </div>
+                    </Modal>
+
+                    {/* Modal Formulario Principal */}
+                    <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Nuevo Registro">
+                        {/* Tabs internos */}
+                        <div className="flex gap-2 mb-4 overflow-x-auto">
+                            {['medicion', 'horas', 'material', 'personal', 'gasto'].map(t => (
+                                <button key={t} onClick={() => setFormType(t)} className={`px-4 py-2 rounded-full text-sm font-bold capitalize ${formType === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+
+                        {formType === 'medicion' && (
+                            <FormMedicion 
+                                form={medForm} 
+                                setForm={setMedForm} 
+                                onSave={guardarMedicion}
+                                onKeyPress={clickTecla}
+                            />
+                        )}
+
+                        {formType === 'horas' && (
+                            <FormHoras 
+                                form={horaForm}
+                                setForm={setHoraForm}
+                                onSave={guardarHora}
+                                onPhoto={tomarFoto}
+                                onDeletePhoto={eliminarFoto}
+                            />
+                        )}
+
+                        {formType === 'material' && (
+                            <FormMaterial
+                                form={materialForm}
+                                setForm={setMaterialForm}
+                                onSave={guardarMaterial}
+                            />
+                        )}
+
+                        {formType === 'personal' && (
+                            <FormPersonal
+                                form={personalForm}
+                                setForm={setPersonalForm}
+                                onSave={guardarPersonal}
+                            />
+                        )}
+
+                        {formType === 'gasto' && (
+                            <FormGasto
+                                form={gastoForm}
+                                setForm={setGastoForm}
+                                onSave={guardarGasto}
+                            />
+                        )}
+                    </Modal>
+
+                    {/* Visor de Fotos */}
+                    <div className={`photo-modal ${showPhotoModal ? 'open' : ''}`} onClick={() => setShowPhotoModal(null)}>
+                        <button className="absolute top-4 right-4 text-white p-2 bg-black/50 rounded-full">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        {showPhotoModal && <img src={showPhotoModal} alt="Evidencia" />}
+                    </div>
+                </>
+            );
+        }
+
+        // ==================== SUB-COMPONENTES ====================
+
+        function LoginScreen({ onLogin }) {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [isLogin, setIsLogin] = useState(true);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (isLogin) {
+                    onLogin(email, password);
+                } else {
+                    // Registro
+                    localStorage.setItem('obrapro_user', JSON.stringify({ email, nombre: email.split('@')[0] }));
+                    onLogin(email, password);
+                }
+            };
+
+            return (
+                <div className="login-screen">
+                    <div className="login-card animate-scale-in">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                                <span className="text-white font-black text-3xl">OP</span>
+                            </div>
+                            <h1 className="text-2xl font-black text-slate-800">ObraPro</h1>
+                            <p className="text-slate-500">Enterprise Edition</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="text-sm font-bold text-slate-700">Email</label>
+                                <input 
+                                    type="email" 
+                                    value={email} 
+                                    onChange={e => setEmail(e.target.value)}
+                                    placeholder="tu@email.com"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-bold text-slate-700">Contraseña</label>
+                                <input 
+                                    type="password" 
+                                    value={password} 
+                                    onChange={e => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg">
+                                {isLogin ? 'INICIAR SESIÓN' : 'CREAR CUENTA'}
+                            </button>
+                        </form>
+
+                        <p className="text-center mt-6 text-sm text-slate-500">
+                            {isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
+                            <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold">
+                                {isLogin ? 'Regístrate' : 'Inicia sesión'}
+                            </button>
+                        </p>
+
+                        <div className="mt-8 pt-6 border-t text-center">
+                            <p className="text-xs text-slate-400">Versión Enterprise 2.0</p>
+                            <p className="text-xs text-slate-400">© 2024 Buen Camino</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Modal({ isOpen, onClose, title, children }) {
+            return (
+                <>
+                    <div className={`sheet-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}></div>
+                    <div className={`bottom-sheet ${isOpen ? 'open' : ''}`}>
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-6"></div>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-black text-slate-800">{title}</h2>
+                            <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        {children}
+                    </div>
+                </>
+            );
+        }
+
+        // ... (Continúan los demás componentes de formularios y vistas)
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

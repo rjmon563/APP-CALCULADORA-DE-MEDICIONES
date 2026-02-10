@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin conexión - ObraPro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        .icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        h1 { font-size: 28px; margin-bottom: 10px; }
+        p { color: #94a3b8; margin-bottom: 30px; line-height: 1.6; }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #2563eb; transform: translateY(-2px); }
+        .status {
+            margin-top: 40px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            font-size: 14px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="icon">
+        <svg width="60" height="60" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
+        </svg>
+    </div>
+    <h1>Sin conexión a internet</h1>
+    <p>ObraPro funciona en modo offline. Tus datos están seguros en el dispositivo y se sincronizarán cuando vuelva la conexión.</p>
+    <button class="btn" onclick="window.location.reload()">Reintentar conexión</button>
+    <div class="status">Modo offline activo • Datos guardados localmente</div>
+
+    <script>
+        // Detectar cuando vuelve la conexión
+        window.addEventListener('online', () => {
+            window.location.href = '/CALCULADORA-DE-MEDICIONES/';
+        });
+    </script>
+</body>
+</html>

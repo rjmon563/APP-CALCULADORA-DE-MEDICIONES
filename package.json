@@ -1,0 +1,25 @@
+{
+  "name": "obrapro-enterprise",
+  "version": "2.0.0",
+  "description": "Sistema completo de gestión de obras",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx live-server --port=3000 --open=/",
+    "build": "echo 'No build step required for vanilla JS'",
+    "test": "echo 'Tests not implemented'"
+  },
+  "keywords": [
+    "construction",
+    "management",
+    "pwa",
+    "offline-first",
+    "firebase"
+  ],
+  "author": "Buen Camino",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "serve": "^14.2.0"
+  }
+}
