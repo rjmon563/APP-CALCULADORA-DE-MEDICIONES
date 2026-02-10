@@ -18,6 +18,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -36,9 +37,11 @@
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         
         .animate-fade-in { animation: fadeIn 0.3s ease; }
         .animate-slide-up { animation: slideUp 0.3s ease; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         
         .ios-card {
             background: white;
@@ -136,6 +139,7 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #10b981; }
         .toast.error { background: #ef4444; }
+        .toast.warning { background: #f59e0b; }
         
         .obra-chip {
             display: inline-flex;
@@ -156,7 +160,7 @@
             border-color: #3b82f6;
         }
         
-        input, select {
+        input, select, textarea {
             font-size: 16px !important;
             border: 2px solid #e2e8f0;
             background: #f8fafc;
@@ -165,9 +169,14 @@
             width: 100%;
             outline: none;
         }
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: #3b82f6;
             background: white;
+        }
+        textarea {
+            resize: none;
+            font-family: inherit;
+            min-height: 100px;
         }
         
         .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -214,8 +223,10 @@
         .btn-icon:active { transform: scale(0.9); }
         .btn-edit { background: #dbeafe; color: #2563eb; }
         .btn-delete { background: #fee2e2; color: #dc2626; }
+        .btn-copy { background: #dcfce7; color: #16a34a; }
+        .btn-share { background: #fef3c7; color: #d97706; }
+        .btn-backup { background: #e0e7ff; color: #4338ca; }
         
-        /* Tabla de resumen estilo europeo */
         .resumen-tabla {
             width: 100%;
             border-collapse: collapse;
@@ -256,6 +267,116 @@
             font-size: 16px;
         }
         .euro { color: #059669; font-weight: 600; }
+        
+        .note-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #3b82f6;
+        }
+        .note-card.urgent {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        .note-card.warning {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+        .note-card.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        .note-date {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .note-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .note-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .tag-personal { background: #dbeafe; color: #1e40af; }
+        .tag-urgente { background: #fecaca; color: #991b1b; }
+        .tag-idea { background: #fde68a; color: #92400e; }
+        .tag-pendiente { background: #bbf7d0; color: #166534; }
+        
+        .export-bar {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .export-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .export-btn:active { transform: scale(0.95); }
+        .export-pdf { background: #fee2e2; color: #dc2626; }
+        .export-excel { background: #dcfce7; color: #16a34a; }
+        .export-copy { background: #dbeafe; color: #2563eb; }
+        
+        /* Storage indicator */
+        .storage-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .storage-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .storage-fill.safe { background: #10b981; }
+        .storage-fill.warning { background: #f59e0b; }
+        .storage-fill.danger { background: #ef4444; }
+        
+        .backup-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .backup-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .backup-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.98);
+        }
+        
+        .file-input-hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -274,7 +395,6 @@
             navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
         }
         
-        // Función para formato europeo
         window.formatEUR = (num) => {
             if (!num || isNaN(num)) return '0,00';
             return parseFloat(num).toLocaleString('es-ES', {
@@ -290,10 +410,59 @@
                 maximumFractionDigits: 2
             });
         };
+        
+        window.copyToClipboard = async (text) => {
+            try {
+                await navigator.clipboard.writeText(text);
+                window.showToast('Copiado al portapapeles');
+                return true;
+            } catch (err) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    window.showToast('Copiado al portapapeles');
+                    return true;
+                } catch (err) {
+                    window.showToast('Error al copiar', 'error');
+                    return false;
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        };
+        
+        // ========== FUNCIONES DE ALMACENAMIENTO ==========
+        window.getStorageInfo = () => {
+            let total = 0;
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    total += localStorage[key].length * 2; // UTF-16 = 2 bytes por char
+                }
+            }
+            return {
+                used: total,
+                total: 5 * 1024 * 1024, // 5MB típico de localStorage
+                percent: Math.round((total / (5 * 1024 * 1024)) * 100)
+            };
+        };
+        
+        window.formatBytes = (bytes) => {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
     </script>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
 
         const DB = {
             get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
@@ -312,6 +481,51 @@
             deleteItem: (store, id) => {
                 const data = DB.get(store).filter(i => i.id !== id);
                 DB.set(store, data);
+            },
+            // ========== NUEVO: Backup/Restore ==========
+            exportAll: () => {
+                const backup = {
+                    version: '1.0',
+                    exportDate: new Date().toISOString(),
+                    user: localStorage.getItem('obrapro_user'),
+                    data: {
+                        obras: DB.get('obras'),
+                        mediciones: DB.get('mediciones'),
+                        horas: DB.get('horas'),
+                        materiales: DB.get('materiales'),
+                        personal: DB.get('personal'),
+                        gastos: DB.get('gastos'),
+                        notas: DB.get('notas'),
+                        fotos: DB.get('fotos')
+                    }
+                };
+                return backup;
+            },
+            importAll: (backup) => {
+                if (!backup || !backup.data) throw new Error('Formato inválido');
+                
+                // Validar versión (para futuras migraciones)
+                if (backup.version !== '1.0') {
+                    console.warn('Versión de backup diferente:', backup.version);
+                }
+                
+                // Importar todo
+                Object.keys(backup.data).forEach(key => {
+                    if (Array.isArray(backup.data[key])) {
+                        DB.set(key, backup.data[key]);
+                    }
+                });
+                
+                // Restaurar usuario si existe
+                if (backup.user) {
+                    localStorage.setItem('obrapro_user', backup.user);
+                }
+                
+                return true;
+            },
+            clearAll: () => {
+                const keys = ['obras', 'mediciones', 'horas', 'materiales', 'personal', 'gastos', 'notas', 'fotos', 'obrapro_user'];
+                keys.forEach(key => localStorage.removeItem(key));
             }
         };
 
@@ -332,6 +546,7 @@
             const [materiales, setMateriales] = useState([]);
             const [personal, setPersonal] = useState([]);
             const [gastos, setGastos] = useState([]);
+            const [notas, setNotas] = useState([]);
             
             const [medForm, setMedForm] = useState({ tipo: 'Tabique', desc: '', valor: '', mult: '', unidad: 'm', precio: '' });
             const [horaForm, setHoraForm] = useState({ desc: '', inicio: '', fin: '', fecha: new Date().toISOString().split('T')[0], descanso: 0, fotos: [] });
@@ -339,6 +554,19 @@
             const [matForm, setMatForm] = useState({ nombre: '', cantidad: '', unidad: '', precioUnitario: '', proveedor: '' });
             const [persForm, setPersForm] = useState({ nombre: '', cargo: '', telefono: '', salarioDia: '' });
             const [gastoForm, setGastoForm] = useState({ concepto: '', monto: '', categoria: 'material', fecha: new Date().toISOString().split('T')[0] });
+            
+            const [showNotaForm, setShowNotaForm] = useState(false);
+            const [notaForm, setNotaForm] = useState({ titulo: '', contenido: '', categoria: 'general', prioridad: 'normal' });
+            
+            // ========== NUEVO: Estados para backup ==========
+            const [showBackupModal, setShowBackupModal] = useState(false);
+            const [storageInfo, setStorageInfo] = useState({ used: 0, total: 5 * 1024 * 1024, percent: 0 });
+            const [lastBackup, setLastBackup] = useState(localStorage.getItem('obrapro_last_backup'));
+
+            // Calcular espacio usado
+            const updateStorageInfo = useCallback(() => {
+                setStorageInfo(window.getStorageInfo());
+            }, []);
 
             useEffect(() => {
                 const savedUser = localStorage.getItem('obrapro_user');
@@ -350,7 +578,12 @@
                     setObraActual(savedObras[0]);
                     cargarDatosObra(savedObras[0].id);
                 }
+                updateStorageInfo();
                 setLoading(false);
+                
+                // Actualizar info de almacenamiento cada 30 segundos
+                const interval = setInterval(updateStorageInfo, 30000);
+                return () => clearInterval(interval);
             }, []);
 
             const cargarDatosObra = (obraId) => {
@@ -359,6 +592,81 @@
                 setMateriales(DB.get('materiales').filter(m => m.obraId === obraId));
                 setPersonal(DB.get('personal').filter(p => p.obraId === obraId));
                 setGastos(DB.get('gastos').filter(g => g.obraId === obraId));
+                setNotas(DB.get('notas').filter(n => n.obraId === obraId).sort((a, b) => b.createdAt - a.createdAt));
+                updateStorageInfo();
+            };
+
+            // ========== NUEVO: Funciones de Backup ==========
+            const exportarBackup = () => {
+                try {
+                    const backup = DB.exportAll();
+                    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ObraPro_Backup_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    // Guardar fecha del último backup
+                    const now = new Date().toISOString();
+                    localStorage.setItem('obrapro_last_backup', now);
+                    setLastBackup(now);
+                    
+                    window.showToast('✅ Backup exportado correctamente');
+                } catch (error) {
+                    console.error('Error exportando:', error);
+                    window.showToast('❌ Error al exportar', 'error');
+                }
+            };
+
+            const importarBackup = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (!confirm('⚠️ Esto REEMPLAZARÁ todos los datos actuales. ¿Estás seguro?')) {
+                    event.target.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const backup = JSON.parse(e.target.result);
+                        DB.importAll(backup);
+                        
+                        // Recargar todo
+                        const savedUser = localStorage.getItem('obrapro_user');
+                        if (savedUser) setUser(JSON.parse(savedUser));
+                        
+                        const savedObras = DB.get('obras');
+                        setObras(savedObras);
+                        
+                        if (savedObras.length > 0) {
+                            setObraActual(savedObras[0]);
+                            cargarDatosObra(savedObras[0].id);
+                        } else {
+                            setObraActual(null);
+                            setMediciones([]);
+                            setHoras([]);
+                            setMateriales([]);
+                            setPersonal([]);
+                            setGastos([]);
+                            setNotas([]);
+                        }
+                        
+                        updateStorageInfo();
+                        window.showToast('✅ Backup importado correctamente');
+                        setShowBackupModal(false);
+                    } catch (error) {
+                        console.error('Error importando:', error);
+                        window.showToast('❌ Archivo inválido o corrupto', 'error');
+                    }
+                    event.target.value = '';
+                };
+                reader.readAsText(file);
             };
 
             const login = (email, nombre) => {
@@ -391,6 +699,7 @@
                 setShowObraForm(false);
                 setEditando(null);
                 setObraForm({ nombre: '', cliente: '', direccion: '', telefono: '', email: '', presupuesto: '' });
+                updateStorageInfo();
                 window.showToast(editando ? 'Obra actualizada' : 'Obra creada');
             };
 
@@ -410,13 +719,14 @@
             const eliminarObra = (obraId) => {
                 if (!confirm('¿Eliminar esta obra y todos sus datos?')) return;
                 DB.deleteItem('obras', obraId);
-                ['mediciones', 'horas', 'materiales', 'personal', 'gastos'].forEach(tipo => {
+                ['mediciones', 'horas', 'materiales', 'personal', 'gastos', 'notas'].forEach(tipo => {
                     DB.get(tipo).filter(i => i.obraId === obraId).forEach(i => DB.deleteItem(tipo, i.id));
                 });
                 const nuevas = DB.get('obras');
                 setObras(nuevas);
                 setObraActual(nuevas[0] || null);
                 if (nuevas[0]) cargarDatosObra(nuevas[0].id);
+                updateStorageInfo();
                 window.showToast('Obra eliminada');
             };
 
@@ -450,6 +760,7 @@
                 DB.saveItem('mediciones', medicion);
                 cargarDatosObra(obraActual.id);
                 cerrarFormMedicion();
+                updateStorageInfo();
                 window.showToast(editando ? 'Medición actualizada' : 'Medición guardada');
             };
 
@@ -464,6 +775,77 @@
                 setShowForm(false);
                 setEditando(null);
                 setMedForm({ tipo: 'Tabique', desc: '', valor: '', mult: '', unidad: 'm', precio: '' });
+            };
+
+            const copiarMedicion = (med) => {
+                const texto = `📏 MEDICIÓN - ${obraActual?.nombre || 'Obra'}
+                
+Tipo: ${med.tipo}
+Descripción: ${med.desc}
+Fecha: ${med.fecha}
+
+📐 Cálculo: ${med.valor} ${med.unidad}
+📊 Metros lineales: ${window.formatNum(med.totalL)} ml
+📐 Metros cuadrados: ${window.formatNum(med.totalS)} m²
+${med.precio > 0 ? `💰 Precio/m²: ${window.formatEUR(med.precio)} €\n💵 Total: ${window.formatEUR(med.totalPrecio)} €` : ''}
+
+_Enviado desde ObraPro_`;
+
+                window.copyToClipboard(texto);
+            };
+
+            const guardarNota = () => {
+                if (!obraActual || !notaForm.contenido.trim()) {
+                    window.showToast('El contenido es obligatorio', 'error');
+                    return;
+                }
+                
+                const nota = {
+                    id: editando?.id || 'nota_' + Date.now(),
+                    obraId: obraActual.id,
+                    titulo: notaForm.titulo || 'Sin título',
+                    contenido: notaForm.contenido,
+                    categoria: notaForm.categoria,
+                    prioridad: notaForm.prioridad,
+                    fecha: editando?.fecha || new Date().toLocaleDateString('es-ES'),
+                    createdAt: editando?.createdAt || Date.now()
+                };
+                
+                DB.saveItem('notas', nota);
+                cargarDatosObra(obraActual.id);
+                cerrarFormNota();
+                updateStorageInfo();
+                window.showToast(editando ? 'Nota actualizada' : 'Nota guardada');
+            };
+
+            const editarNota = (nota) => {
+                setEditando(nota);
+                setNotaForm({
+                    titulo: nota.titulo,
+                    contenido: nota.contenido,
+                    categoria: nota.categoria,
+                    prioridad: nota.prioridad
+                });
+                setShowNotaForm(true);
+            };
+
+            const cerrarFormNota = () => {
+                setShowNotaForm(false);
+                setEditando(null);
+                setNotaForm({ titulo: '', contenido: '', categoria: 'general', prioridad: 'normal' });
+            };
+
+            const copiarNota = (nota) => {
+                const texto = `📝 NOTA - ${obraActual?.nombre || 'Obra'}
+
+${nota.titulo !== 'Sin título' ? `📌 ${nota.titulo}\n` : ''}${nota.categoria !== 'general' ? `🏷️ ${nota.categoria.toUpperCase()}\n` : ''}
+${nota.contenido}
+
+📅 ${nota.fecha}
+
+_Enviado desde ObraPro_`;
+
+                window.copyToClipboard(texto);
             };
 
             const guardarHora = () => {
@@ -494,6 +876,7 @@
                 }
                 cargarDatosObra(obraActual.id);
                 cerrarFormHora();
+                updateStorageInfo();
                 window.showToast(editando ? 'Hora actualizada' : 'Horas guardadas');
             };
 
@@ -524,6 +907,7 @@
                 setShowForm(false);
                 setEditando(null);
                 setMatForm({ nombre: '', cantidad: '', unidad: '', precioUnitario: '', proveedor: '' });
+                updateStorageInfo();
                 window.showToast(editando ? 'Material actualizado' : 'Material guardado');
             };
 
@@ -547,6 +931,7 @@
                 setShowForm(false);
                 setEditando(null);
                 setPersForm({ nombre: '', cargo: '', telefono: '', salarioDia: '' });
+                updateStorageInfo();
                 window.showToast(editando ? 'Personal actualizado' : 'Personal guardado');
             };
 
@@ -565,6 +950,7 @@
                 setShowForm(false);
                 setEditando(null);
                 setGastoForm({ concepto: '', monto: '', categoria: 'material', fecha: new Date().toISOString().split('T')[0] });
+                updateStorageInfo();
                 window.showToast(editando ? 'Gasto actualizado' : 'Gasto guardado');
             };
 
@@ -596,7 +982,101 @@
                 if (!confirm('¿Eliminar este registro?')) return;
                 DB.deleteItem(tipo, id);
                 cargarDatosObra(obraActual.id);
+                updateStorageInfo();
                 window.showToast('Eliminado');
+            };
+
+            const exportarExcel = () => {
+                const wb = XLSX.utils.book_new();
+                wb.Props = {
+                    Title: `ObraPro - ${obraActual?.nombre}`,
+                    Subject: "Resumen de obra",
+                    Author: "ObraPro",
+                    CreatedDate: new Date()
+                };
+
+                if (mediciones.length > 0) {
+                    const medsWS = XLSX.utils.json_to_sheet(mediciones.map(m => ({
+                        Fecha: m.fecha,
+                        Tipo: m.tipo,
+                        Descripción: m.desc,
+                        Cálculo: m.valor,
+                        Multiplicador: m.mult,
+                        'Metros Lineales': parseFloat(m.totalL),
+                        'Metros Cuadrados': parseFloat(m.totalS),
+                        'Precio/m²': m.precio,
+                        'Total €': parseFloat(m.totalPrecio || 0)
+                    })));
+                    XLSX.utils.book_append_sheet(wb, medsWS, "Mediciones");
+                }
+
+                if (horas.length > 0) {
+                    const horasWS = XLSX.utils.json_to_sheet(horas.map(h => ({
+                        Fecha: h.fecha,
+                        Descripción: h.desc,
+                        Inicio: h.inicio,
+                        Fin: h.fin,
+                        Descanso: h.descanso,
+                        'Total Horas': parseFloat(h.total)
+                    })));
+                    XLSX.utils.book_append_sheet(wb, horasWS, "Horas");
+                }
+
+                if (materiales.length > 0) {
+                    const matsWS = XLSX.utils.json_to_sheet(materiales.map(m => ({
+                        Fecha: m.fecha,
+                        Nombre: m.nombre,
+                        Cantidad: parseFloat(m.cantidad),
+                        Unidad: m.unidad,
+                        'Precio Unitario': parseFloat(m.precioUnitario || 0),
+                        Proveedor: m.proveedor,
+                        'Total €': parseFloat(m.total || 0)
+                    })));
+                    XLSX.utils.book_append_sheet(wb, matsWS, "Materiales");
+                }
+
+                if (notas.length > 0) {
+                    const notasWS = XLSX.utils.json_to_sheet(notas.map(n => ({
+                        Fecha: n.fecha,
+                        Título: n.titulo,
+                        Categoría: n.categoria,
+                        Prioridad: n.prioridad,
+                        Contenido: n.contenido
+                    })));
+                    XLSX.utils.book_append_sheet(wb, notasWS, "Notas");
+                }
+
+                const resumenData = [{
+                    Concepto: 'Total Metros Lineales',
+                    Valor: stats.totalML,
+                    Unidad: 'ml'
+                }, {
+                    Concepto: 'Total Metros Cuadrados',
+                    Valor: stats.totalM2,
+                    Unidad: 'm²'
+                }, {
+                    Concepto: 'Total Horas Trabajadas',
+                    Valor: stats.totalHoras,
+                    Unidad: 'h'
+                }, {
+                    Concepto: 'Total Materiales',
+                    Valor: stats.totalMateriales,
+                    Unidad: '€'
+                }, {
+                    Concepto: 'Total Gastos',
+                    Valor: stats.totalGastos,
+                    Unidad: '€'
+                }, {
+                    Concepto: 'Total Mediciones',
+                    Valor: stats.totalPrecio,
+                    Unidad: '€'
+                }];
+                
+                const resumenWS = XLSX.utils.json_to_sheet(resumenData);
+                XLSX.utils.book_append_sheet(wb, resumenWS, "Resumen");
+
+                XLSX.writeFile(wb, `ObraPro_${obraActual?.nombre}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                window.showToast('Excel generado');
             };
 
             const exportarPDF = () => {
@@ -644,7 +1124,6 @@
                 window.showToast('PDF generado');
             };
 
-            // ========== CÁLCULO DEL RESUMEN POR TIPO ==========
             const calcularResumenPorTipo = () => {
                 const tipos = ['Tabique', 'Techo', 'Cajón ML', 'Tabica', 'Cantonera', 'Muro', 'Piso'];
                 const resumen = [];
@@ -683,6 +1162,26 @@
                 return colores[tipo] || 'bg-gray-100 text-gray-700';
             };
 
+            const getColorPrioridad = (prioridad) => {
+                const colores = {
+                    'normal': 'note-card',
+                    'urgente': 'note-card urgent',
+                    'importante': 'note-card warning',
+                    'baja': 'note-card success'
+                };
+                return colores[prioridad] || 'note-card';
+            };
+
+            const getTagClass = (categoria) => {
+                const clases = {
+                    'personal': 'tag-personal',
+                    'urgente': 'tag-urgente',
+                    'idea': 'tag-idea',
+                    'pendiente': 'tag-pendiente'
+                };
+                return clases[categoria] || 'bg-slate-100 text-slate-600';
+            };
+
             const resumenPorTipo = calcularResumenPorTipo();
             
             const stats = {
@@ -692,6 +1191,19 @@
                 totalHoras: horas.reduce((a, b) => a + parseFloat(b.total), 0),
                 totalMateriales: materiales.reduce((a, b) => a + parseFloat(b.total || 0), 0),
                 totalGastos: gastos.reduce((a, b) => a + parseFloat(b.monto || 0), 0)
+            };
+
+            // Formatear fecha del último backup
+            const formatLastBackup = () => {
+                if (!lastBackup) return 'Nunca';
+                const date = new Date(lastBackup);
+                const now = new Date();
+                const diff = (now - date) / 1000; // segundos
+                
+                if (diff < 60) return 'Hace un momento';
+                if (diff < 3600) return `Hace ${Math.floor(diff/60)} min`;
+                if (diff < 86400) return `Hace ${Math.floor(diff/3600)} h`;
+                return date.toLocaleDateString('es-ES');
             };
 
             if (loading) {
@@ -724,7 +1236,14 @@
                                     <p className="text-xs text-slate-400">Buen Camino</p>
                                 </div>
                             </div>
-                            <button onClick={logout} className="text-xs text-slate-400">Salir</button>
+                            <div className="flex items-center gap-2">
+                                {/* Botón de backup rápido en header */}
+                                <button onClick={() => setShowBackupModal(true)} className="p-2 bg-slate-800 rounded-lg text-xs flex items-center gap-1">
+                                    💾
+                                    {storageInfo.percent > 80 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
+                                </button>
+                                <button onClick={logout} className="text-xs text-slate-400">Salir</button>
+                            </div>
                         </div>
                         
                         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -751,6 +1270,49 @@
                                 </div>
                             ) : (
                                 <div className="space-y-4">
+                                    {/* ========== NUEVO: Tarjeta de Backup ========== */}
+                                    <div className="backup-card">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h3 className="font-bold text-lg">💾 Backup de Datos</h3>
+                                                <p className="text-sm opacity-90">Último: {formatLastBackup()}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs opacity-75">Almacenamiento</p>
+                                                <p className="font-bold">{window.formatBytes(storageInfo.used)} / 5 MB</p>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Barra de progreso del almacenamiento */}
+                                        <div className="storage-bar mb-4">
+                                            <div 
+                                                className={`storage-fill ${storageInfo.percent > 90 ? 'danger' : storageInfo.percent > 70 ? 'warning' : 'safe'}`}
+                                                style={{width: `${Math.min(storageInfo.percent, 100)}%`}}
+                                            ></div>
+                                        </div>
+                                        
+                                        <div className="flex gap-2">
+                                            <button onClick={exportarBackup} className="backup-btn flex-1">
+                                                📥 Exportar Backup
+                                            </button>
+                                            <button onClick={() => document.getElementById('import-file').click()} className="backup-btn flex-1">
+                                                📤 Importar Backup
+                                            </button>
+                                            <input 
+                                                type="file" 
+                                                id="import-file" 
+                                                accept=".json" 
+                                                className="file-input-hidden"
+                                                onChange={importarBackup}
+                                            />
+                                        </div>
+                                        {storageInfo.percent > 80 && (
+                                            <p className="text-xs mt-2 text-yellow-200">
+                                                ⚠️ Espacio bajo. Exporta y limpia fotos antiguas.
+                                            </p>
+                                        )}
+                                    </div>
+
                                     <div className="ios-card p-4 bg-gradient-to-br from-blue-600 to-purple-600 text-white">
                                         <div className="flex justify-between items-start mb-2">
                                             <div>
@@ -773,6 +1335,17 @@
                                         {stats.totalPrecio > 0 && (
                                             <p className="mt-3 pt-3 border-t border-white/20 text-lg font-bold">{window.formatEUR(stats.totalPrecio)} €</p>
                                         )}
+                                    </div>
+
+                                    <div className="export-bar bg-white rounded-2xl mx-[-4px]">
+                                        <button onClick={exportarPDF} className="export-btn export-pdf">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                            PDF
+                                        </button>
+                                        <button onClick={exportarExcel} className="export-btn export-excel">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                            Excel
+                                        </button>
                                     </div>
 
                                     <div className="menu-grid">
@@ -803,6 +1376,11 @@
                                             <span>Resumen</span>
                                             {resumenPorTipo.length > 0 && <span className="absolute top-1 right-1 bg-purple-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">📊</span>}
                                         </div>
+                                        <div className="menu-item" onClick={() => setVista('notas')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            <span>Notas</span>
+                                            {notas.length > 0 && <span className="absolute top-1 right-1 bg-amber-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{notas.length}</span>}
+                                        </div>
                                     </div>
 
                                     {mediciones.length > 0 && (
@@ -822,12 +1400,71 @@
                                             ))}
                                         </div>
                                     )}
+
+                                    {notas.length > 0 && (
+                                        <div className="ios-card p-4">
+                                            <h3 className="text-sm font-bold text-slate-500 mb-3">📝 Notas recientes</h3>
+                                            {notas.slice(0, 2).map(n => (
+                                                <div key={n.id} className="mb-2 last:mb-0 p-3 bg-slate-50 rounded-xl border-l-4 border-amber-400">
+                                                    <p className="font-bold text-sm text-slate-800">{n.titulo}</p>
+                                                    <p className="text-xs text-slate-500 line-clamp-2">{n.contenido}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </main>
                     )}
 
-                    {/* ========== VISTA RESUMEN POR TIPO ========== */}
+                    {vista === 'notas' && (
+                        <main className="flex-1 overflow-y-auto no-scrollbar p-4 bg-slate-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => setVista('dashboard')} className="p-2 bg-white rounded-full">←</button>
+                                    <h2 className="text-xl font-bold text-slate-800">📝 Notas Rápidas</h2>
+                                </div>
+                                <button onClick={() => { setEditando(null); setNotaForm({ titulo: '', contenido: '', categoria: 'general', prioridad: 'normal' }); setShowNotaForm(true); }} className="px-4 py-2 bg-amber-500 text-white rounded-full text-sm font-bold">
+                                    + Nueva
+                                </button>
+                            </div>
+
+                            {notas.length === 0 ? (
+                                <div className="text-center text-slate-400 py-10">
+                                    <p className="text-4xl mb-2">📝</p>
+                                    <p>No hay notas aún</p>
+                                    <p className="text-sm mt-2">Crea tu primera nota para recordar detalles importantes</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {notas.map(nota => (
+                                        <div key={nota.id} className={getColorPrioridad(nota.prioridad)}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h3 className="font-bold text-slate-800">{nota.titulo}</h3>
+                                                        {nota.categoria !== 'general' && (
+                                                            <span className={getTagClass(nota.categoria)}>
+                                                                {nota.categoria}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="note-date">{nota.fecha}</p>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => copiarNota(nota)} className="btn-icon btn-copy" title="Copiar">📋</button>
+                                                    <button onClick={() => editarNota(nota)} className="btn-icon btn-edit" title="Editar">✏️</button>
+                                                    <button onClick={() => eliminarItem('notas', nota.id)} className="btn-icon btn-delete" title="Eliminar">🗑️</button>
+                                                </div>
+                                            </div>
+                                            <p className="text-slate-700 text-sm whitespace-pre-wrap">{nota.contenido}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </main>
+                    )}
+
                     {vista === 'resumen' && (
                         <main className="flex-1 overflow-y-auto no-scrollbar p-4 bg-slate-100">
                             <div className="flex items-center gap-4 mb-4">
@@ -877,7 +1514,6 @@
                                         </table>
                                     </div>
 
-                                    {/* Tarjetas de resumen visual */}
                                     <div className="grid grid-cols-2 gap-3">
                                         {resumenPorTipo.map(item => (
                                             <div key={item.tipo} className="ios-card p-3">
@@ -891,7 +1527,6 @@
                                         ))}
                                     </div>
 
-                                    {/* Comparación con presupuesto */}
                                     {obraActual?.presupuesto && (
                                         <div className="ios-card p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
                                             <h3 className="text-sm font-bold text-amber-800 mb-2">📈 Comparación con Presupuesto</h3>
@@ -922,16 +1557,17 @@
                     {vista === 'mediciones' && (
                         <VistaLista titulo="Mediciones" items={mediciones} onBack={() => setVista('dashboard')} onEdit={editarMedicion} onDelete={(id) => eliminarItem('mediciones', id)} renderItem={m => (
                             <>
-                                <div>
+                                <div className="flex-1">
                                     <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded">{m.tipo}</span>
                                     <p className="font-medium text-sm mt-1">{m.desc}</p>
                                     <p className="text-xs text-slate-400">{m.fecha}</p>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right mr-2">
                                     <p className="font-bold text-lg">{window.formatNum(m.totalL)} ml</p>
                                     <p className="text-xs text-emerald-600">{window.formatNum(m.totalS)} m²</p>
                                     {m.precio > 0 && <p className="text-xs text-amber-600">{window.formatEUR(m.totalPrecio)} €</p>}
                                 </div>
+                                <button onClick={(e) => { e.stopPropagation(); copiarMedicion(m); }} className="btn-icon btn-copy mr-1" title="Copiar medición">📋</button>
                             </>
                         )} />
                     )}
@@ -991,7 +1627,7 @@
                         </button>
                     )}
 
-                    {/* Modales (simplificados para el ejemplo) */}
+                    {/* Modales */}
                     <div className={`sheet-overlay ${showObraForm ? 'open' : ''}`} onClick={() => setShowObraForm(false)}></div>
                     <div className={`bottom-sheet ${showObraForm ? 'open' : ''}`}>
                         <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
@@ -1111,6 +1747,104 @@
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Modal para Notas */}
+                    <div className={`sheet-overlay ${showNotaForm ? 'open' : ''}`} onClick={() => setShowNotaForm(false)}></div>
+                    <div className={`bottom-sheet ${showNotaForm ? 'open' : ''}`}>
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
+                        <h2 className="text-xl font-bold mb-4">{editando ? 'Editar Nota' : 'Nueva Nota Rápida'}</h2>
+                        <div className="space-y-3">
+                            <input placeholder="Título (opcional)" value={notaForm.titulo} onChange={e => setNotaForm({...notaForm, titulo: e.target.value})} />
+                            <textarea placeholder="Escribe tu nota aquí..." value={notaForm.contenido} onChange={e => setNotaForm({...notaForm, contenido: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <select value={notaForm.categoria} onChange={e => setNotaForm({...notaForm, categoria: e.target.value})}>
+                                    <option value="general">General</option>
+                                    <option value="personal">👤 Personal</option>
+                                    <option value="urgente">🚨 Urgente</option>
+                                    <option value="idea">💡 Idea</option>
+                                    <option value="pendiente">⏳ Pendiente</option>
+                                </select>
+                                <select value={notaForm.prioridad} onChange={e => setNotaForm({...notaForm, prioridad: e.target.value})}>
+                                    <option value="normal">Normal</option>
+                                    <option value="baja">Baja</option>
+                                    <option value="importante">Importante</option>
+                                    <option value="urgente">Urgente</option>
+                                </select>
+                            </div>
+                            <div className="flex gap-2">
+                                {editando && <button onClick={() => { eliminarItem('notas', editando.id); cerrarFormNota(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                <button onClick={guardarNota} className="flex-1 py-3 bg-amber-500 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'GUARDAR NOTA'}</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ========== NUEVO: Modal de Backup Detallado ========== */}
+                    <div className={`sheet-overlay ${showBackupModal ? 'open' : ''}`} onClick={() => setShowBackupModal(false)}></div>
+                    <div className={`bottom-sheet ${showBackupModal ? 'open' : ''}`}>
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
+                        <h2 className="text-xl font-bold mb-4">💾 Gestión de Backup</h2>
+                        
+                        <div className="space-y-4">
+                            <div className="bg-slate-50 p-4 rounded-xl">
+                                <h3 className="font-bold text-sm mb-2">Estado del Almacenamiento</h3>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-slate-600">Usado:</span>
+                                    <span className="font-bold">{window.formatBytes(storageInfo.used)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-slate-600">Disponible:</span>
+                                    <span className="font-bold">{window.formatBytes(storageInfo.total - storageInfo.used)}</span>
+                                </div>
+                                <div className="storage-bar">
+                                    <div 
+                                        className={`storage-fill ${storageInfo.percent > 90 ? 'danger' : storageInfo.percent > 70 ? 'warning' : 'safe'}`}
+                                        style={{width: `${Math.min(storageInfo.percent, 100)}%`}}
+                                    ></div>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-1">{storageInfo.percent}% usado</p>
+                            </div>
+
+                            <div className="bg-blue-50 p-4 rounded-xl">
+                                <h3 className="font-bold text-sm mb-2 text-blue-900">📊 Resumen de Datos</h3>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="flex justify-between"><span>Obras:</span> <span className="font-bold">{obras.length}</span></div>
+                                    <div className="flex justify-between"><span>Mediciones:</span> <span className="font-bold">{mediciones.length}</span></div>
+                                    <div className="flex justify-between"><span>Horas:</span> <span className="font-bold">{horas.length}</span></div>
+                                    <div className="flex justify-between"><span>Materiales:</span> <span className="font-bold">{materiales.length}</span></div>
+                                    <div className="flex justify-between"><span>Notas:</span> <span className="font-bold">{notas.length}</span></div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <button onClick={exportarBackup} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl flex items-center justify-center gap-2">
+                                    <span>📥</span> Exportar Backup Completo
+                                </button>
+                                
+                                <label className="w-full py-3 bg-white border-2 border-indigo-600 text-indigo-600 font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+                                    <span>📤</span> Importar Backup
+                                    <input 
+                                        type="file" 
+                                        accept=".json" 
+                                        className="file-input-hidden"
+                                        onChange={importarBackup}
+                                    />
+                                </label>
+                                
+                                <button onClick={() => {
+                                    if (confirm('⚠️ ¿Eliminar TODOS los datos? Esta acción no se puede deshacer.')) {
+                                        DB.clearAll();
+                                        window.location.reload();
+                                    }
+                                }} className="w-full py-3 bg-red-100 text-red-600 font-bold rounded-xl">
+                                    🗑️ Borrar Todos los Datos
+                                </button>
+                            </div>
+
+                            <p className="text-xs text-slate-500 text-center">
+                                💡 Consejo: Exporta tu backup semanalmente y guárdalo en la nube.
+                            </p>
+                        </div>
                     </div>
 
                     <div className={`photo-modal ${showPhotoModal ? 'open' : ''}`} onClick={() => setShowPhotoModal(null)}>
