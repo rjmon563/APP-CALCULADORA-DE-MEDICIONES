@@ -205,32 +205,57 @@
         .menu-item svg { width: 28px; height: 28px; color: #3b82f6; }
         .menu-item span { font-size: 11px; font-weight: 600; color: #475569; text-align: center; }
         
-        /* Botones de acción en items */
-        .item-actions {
-            display: flex;
-            gap: 8px;
-        }
+        .item-actions { display: flex; gap: 8px; }
         .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            transition: all 0.2s;
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; transition: all 0.2s;
         }
         .btn-icon:active { transform: scale(0.9); }
         .btn-edit { background: #dbeafe; color: #2563eb; }
         .btn-delete { background: #fee2e2; color: #dc2626; }
         
-        .obra-card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        /* Tabla de resumen estilo europeo */
+        .resumen-tabla {
+            width: 100%;
+            border-collapse: collapse;
         }
+        .resumen-tabla th {
+            background: #f1f5f9;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .resumen-tabla td {
+            padding: 16px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+        .resumen-tabla tr:last-child td {
+            border-bottom: none;
+        }
+        .tipo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .total-row {
+            background: #f8fafc;
+            font-weight: 700;
+        }
+        .total-row td {
+            border-top: 2px solid #e2e8f0;
+            font-size: 16px;
+        }
+        .euro { color: #059669; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -248,19 +273,33 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
         }
+        
+        // Función para formato europeo
+        window.formatEUR = (num) => {
+            if (!num || isNaN(num)) return '0,00';
+            return parseFloat(num).toLocaleString('es-ES', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
+        
+        window.formatNum = (num) => {
+            if (!num || isNaN(num)) return '0,00';
+            return parseFloat(num).toLocaleString('es-ES', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
     </script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Database mejorado con funciones de edición
         const DB = {
             get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
             set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
-            
             saveItem: (store, item) => {
                 const data = DB.get(store);
-                // Si ya existe (tiene id), actualizar; si no, agregar
                 const index = data.findIndex(i => i.id === item.id);
                 if (index >= 0) {
                     data[index] = { ...data[index], ...item, updatedAt: Date.now() };
@@ -270,14 +309,9 @@
                 DB.set(store, data);
                 return item;
             },
-            
             deleteItem: (store, id) => {
                 const data = DB.get(store).filter(i => i.id !== id);
                 DB.set(store, data);
-            },
-            
-            getItem: (store, id) => {
-                return DB.get(store).find(i => i.id === id);
             }
         };
 
@@ -289,10 +323,9 @@
             const [vista, setVista] = useState('dashboard');
             const [showForm, setShowForm] = useState(false);
             const [showObraForm, setShowObraForm] = useState(false);
-            const [showEditModal, setShowEditModal] = useState(false);
             const [showPhotoModal, setShowPhotoModal] = useState(null);
             const [formType, setFormType] = useState('medicion');
-            const [editando, setEditando] = useState(null); // Item que se está editando
+            const [editando, setEditando] = useState(null);
             
             const [mediciones, setMediciones] = useState([]);
             const [horas, setHoras] = useState([]);
@@ -300,7 +333,6 @@
             const [personal, setPersonal] = useState([]);
             const [gastos, setGastos] = useState([]);
             
-            // Forms
             const [medForm, setMedForm] = useState({ tipo: 'Tabique', desc: '', valor: '', mult: '', unidad: 'm', precio: '' });
             const [horaForm, setHoraForm] = useState({ desc: '', inicio: '', fin: '', fecha: new Date().toISOString().split('T')[0], descanso: 0, fotos: [] });
             const [obraForm, setObraForm] = useState({ nombre: '', cliente: '', direccion: '', telefono: '', email: '', presupuesto: '' });
@@ -341,20 +373,17 @@
                 setUser(null);
             };
 
-            // ========== CREAR Y EDITAR OBRAS ==========
             const guardarObra = () => {
                 if (!obraForm.nombre) {
                     window.showToast('El nombre es obligatorio', 'error');
                     return;
                 }
-                
                 const obra = {
                     id: editando?.id || 'obra_' + Date.now(),
                     ...obraForm,
                     fechaCreacion: editando?.fechaCreacion || new Date().toLocaleDateString('es-ES'),
                     updatedAt: Date.now()
                 };
-                
                 DB.saveItem('obras', obra);
                 const nuevasObras = DB.get('obras');
                 setObras(nuevasObras);
@@ -381,7 +410,6 @@
             const eliminarObra = (obraId) => {
                 if (!confirm('¿Eliminar esta obra y todos sus datos?')) return;
                 DB.deleteItem('obras', obraId);
-                // Eliminar datos relacionados
                 ['mediciones', 'horas', 'materiales', 'personal', 'gastos'].forEach(tipo => {
                     DB.get(tipo).filter(i => i.obraId === obraId).forEach(i => DB.deleteItem(tipo, i.id));
                 });
@@ -392,7 +420,6 @@
                 window.showToast('Obra eliminada');
             };
 
-            // ========== MEDICIONES ==========
             const clickTecla = (t) => {
                 if (t === 'C') setMedForm(p => ({...p, valor: ''}));
                 else if (t === '←') setMedForm(p => ({...p, valor: p.valor.slice(0, -1)}));
@@ -402,7 +429,6 @@
 
             const guardarMedicion = () => {
                 if (!obraActual || !medForm.valor) return;
-                
                 const suma = medForm.valor.split('+').reduce((a, b) => a + (parseFloat(b) || 0), 0);
                 const mult = parseFloat(medForm.mult) || 0;
                 const precio = parseFloat(medForm.precio) || 0;
@@ -421,7 +447,6 @@
                     totalPrecio: (suma * mult * precio).toFixed(2),
                     fecha: editando?.fecha || new Date().toLocaleDateString('es-ES')
                 };
-                
                 DB.saveItem('mediciones', medicion);
                 cargarDatosObra(obraActual.id);
                 cerrarFormMedicion();
@@ -430,14 +455,7 @@
 
             const editarMedicion = (med) => {
                 setEditando(med);
-                setMedForm({
-                    tipo: med.tipo,
-                    desc: med.desc,
-                    valor: med.valor,
-                    mult: med.mult,
-                    unidad: med.unidad,
-                    precio: med.precio
-                });
+                setMedForm({ tipo: med.tipo, desc: med.desc, valor: med.valor, mult: med.mult, unidad: med.unidad, precio: med.precio });
                 setFormType('medicion');
                 setShowForm(true);
             };
@@ -448,19 +466,15 @@
                 setMedForm({ tipo: 'Tabique', desc: '', valor: '', mult: '', unidad: 'm', precio: '' });
             };
 
-            // ========== HORAS ==========
             const guardarHora = () => {
                 if (!obraActual || !horaForm.inicio || !horaForm.fin) return;
-                
                 const h1 = new Date(`2000-01-01T${horaForm.inicio}`);
                 const h2 = new Date(`2000-01-01T${horaForm.fin}`);
                 let horas = (h2 - h1) / 3600000 - (parseFloat(horaForm.descanso) || 0) / 60;
-                
                 if (horas <= 0) {
                     window.showToast('Hora fin debe ser mayor', 'error');
                     return;
                 }
-
                 const hora = {
                     id: editando?.id || 'hora_' + Date.now(),
                     obraId: obraActual.id,
@@ -472,21 +486,12 @@
                     total: horas.toFixed(2),
                     fotos: editando ? editando.fotos : horaForm.fotos.length
                 };
-                
                 DB.saveItem('horas', hora);
-                
-                // Guardar fotos nuevas
                 if (!editando && horaForm.fotos.length > 0) {
                     horaForm.fotos.forEach((foto, i) => {
-                        DB.saveItem('fotos', {
-                            id: `foto_${hora.id}_${i}`,
-                            horaId: hora.id,
-                            obraId: obraActual.id,
-                            data: foto
-                        });
+                        DB.saveItem('fotos', { id: `foto_${hora.id}_${i}`, horaId: hora.id, obraId: obraActual.id, data: foto });
                     });
                 }
-                
                 cargarDatosObra(obraActual.id);
                 cerrarFormHora();
                 window.showToast(editando ? 'Hora actualizada' : 'Horas guardadas');
@@ -494,14 +499,7 @@
 
             const editarHora = (hora) => {
                 setEditando(hora);
-                setHoraForm({
-                    desc: hora.desc,
-                    inicio: hora.inicio,
-                    fin: hora.fin,
-                    fecha: hora.fecha,
-                    descanso: hora.descanso,
-                    fotos: []
-                });
+                setHoraForm({ desc: hora.desc, inicio: hora.inicio, fin: hora.fin, fecha: hora.fecha, descanso: hora.descanso, fotos: [] });
                 setFormType('horas');
                 setShowForm(true);
             };
@@ -512,10 +510,8 @@
                 setHoraForm({ desc: '', inicio: '', fin: '', fecha: new Date().toISOString().split('T')[0], descanso: 0, fotos: [] });
             };
 
-            // ========== MATERIALES ==========
             const guardarMaterial = () => {
                 if (!obraActual || !matForm.nombre) return;
-                
                 const material = {
                     id: editando?.id || 'mat_' + Date.now(),
                     obraId: obraActual.id,
@@ -523,110 +519,62 @@
                     total: (parseFloat(matForm.cantidad) * parseFloat(matForm.precioUnitario || 0)).toFixed(2),
                     fecha: editando?.fecha || new Date().toLocaleDateString('es-ES')
                 };
-                
                 DB.saveItem('materiales', material);
                 cargarDatosObra(obraActual.id);
-                cerrarFormMaterial();
+                setShowForm(false);
+                setEditando(null);
+                setMatForm({ nombre: '', cantidad: '', unidad: '', precioUnitario: '', proveedor: '' });
                 window.showToast(editando ? 'Material actualizado' : 'Material guardado');
             };
 
             const editarMaterial = (mat) => {
                 setEditando(mat);
-                setMatForm({
-                    nombre: mat.nombre,
-                    cantidad: mat.cantidad,
-                    unidad: mat.unidad,
-                    precioUnitario: mat.precioUnitario,
-                    proveedor: mat.proveedor
-                });
+                setMatForm({ nombre: mat.nombre, cantidad: mat.cantidad, unidad: mat.unidad, precioUnitario: mat.precioUnitario, proveedor: mat.proveedor });
                 setFormType('material');
                 setShowForm(true);
             };
 
-            const cerrarFormMaterial = () => {
-                setShowForm(false);
-                setEditando(null);
-                setMatForm({ nombre: '', cantidad: '', unidad: '', precioUnitario: '', proveedor: '' });
-            };
-
-            // ========== PERSONAL ==========
             const guardarPersonal = () => {
                 if (!obraActual || !persForm.nombre) return;
-                
                 const person = {
                     id: editando?.id || 'pers_' + Date.now(),
                     obraId: obraActual.id,
                     ...persForm,
                     fechaRegistro: editando?.fechaRegistro || new Date().toLocaleDateString('es-ES')
                 };
-                
                 DB.saveItem('personal', person);
                 cargarDatosObra(obraActual.id);
-                cerrarFormPersonal();
+                setShowForm(false);
+                setEditando(null);
+                setPersForm({ nombre: '', cargo: '', telefono: '', salarioDia: '' });
                 window.showToast(editando ? 'Personal actualizado' : 'Personal guardado');
             };
 
             const editarPersonal = (pers) => {
                 setEditando(pers);
-                setPersForm({
-                    nombre: pers.nombre,
-                    cargo: pers.cargo,
-                    telefono: pers.telefono,
-                    salarioDia: pers.salarioDia
-                });
+                setPersForm({ nombre: pers.nombre, cargo: pers.cargo, telefono: pers.telefono, salarioDia: pers.salarioDia });
                 setFormType('personal');
                 setShowForm(true);
             };
 
-            const cerrarFormPersonal = () => {
-                setShowForm(false);
-                setEditando(null);
-                setPersForm({ nombre: '', cargo: '', telefono: '', salarioDia: '' });
-            };
-
-            // ========== GASTOS ==========
             const guardarGasto = () => {
                 if (!obraActual || !gastoForm.concepto) return;
-                
-                const gasto = {
-                    id: editando?.id || 'gasto_' + Date.now(),
-                    obraId: obraActual.id,
-                    ...gastoForm
-                };
-                
+                const gasto = { id: editando?.id || 'gasto_' + Date.now(), obraId: obraActual.id, ...gastoForm };
                 DB.saveItem('gastos', gasto);
                 cargarDatosObra(obraActual.id);
-                cerrarFormGasto();
+                setShowForm(false);
+                setEditando(null);
+                setGastoForm({ concepto: '', monto: '', categoria: 'material', fecha: new Date().toISOString().split('T')[0] });
                 window.showToast(editando ? 'Gasto actualizado' : 'Gasto guardado');
             };
 
             const editarGasto = (gasto) => {
                 setEditando(gasto);
-                setGastoForm({
-                    concepto: gasto.concepto,
-                    monto: gasto.monto,
-                    categoria: gasto.categoria,
-                    fecha: gasto.fecha
-                });
+                setGastoForm({ concepto: gasto.concepto, monto: gasto.monto, categoria: gasto.categoria, fecha: gasto.fecha });
                 setFormType('gasto');
                 setShowForm(true);
             };
 
-            const cerrarFormGasto = () => {
-                setShowForm(false);
-                setEditando(null);
-                setGastoForm({ concepto: '', monto: '', categoria: 'material', fecha: new Date().toISOString().split('T')[0] });
-            };
-
-            // ========== ELIMINAR GENÉRICO ==========
-            const eliminarItem = (tipo, id) => {
-                if (!confirm('¿Eliminar este registro?')) return;
-                DB.deleteItem(tipo, id);
-                cargarDatosObra(obraActual.id);
-                window.showToast('Eliminado');
-            };
-
-            // ========== FOTOS ==========
             const tomarFoto = () => {
                 const input = document.createElement('input');
                 input.type = 'file';
@@ -644,7 +592,13 @@
 
             const eliminarFoto = (idx) => setHoraForm(p => ({...p, fotos: p.fotos.filter((_, i) => i !== idx)}));
 
-            // ========== EXPORTAR ==========
+            const eliminarItem = (tipo, id) => {
+                if (!confirm('¿Eliminar este registro?')) return;
+                DB.deleteItem(tipo, id);
+                cargarDatosObra(obraActual.id);
+                window.showToast('Eliminado');
+            };
+
             const exportarPDF = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
@@ -664,8 +618,8 @@
                     doc.text('MEDICIONES', 14, y);
                     y += 10;
                     doc.autoTable({
-                        head: [['Fecha', 'Tipo', 'Descripción', 'm²', 'Total']],
-                        body: mediciones.map(m => [m.fecha, m.tipo, m.desc.substring(0, 25), m.totalS, m.totalPrecio ? '$' + m.totalPrecio : '-']),
+                        head: [['Fecha', 'Tipo', 'Descripcion', 'm2', 'Total']],
+                        body: mediciones.map(m => [m.fecha, m.tipo, m.desc.substring(0, 25), m.totalS.replace('.', ','), m.totalPrecio ? m.totalPrecio.replace('.', ',') + ' EUR' : '-']),
                         startY: y,
                         theme: 'striped',
                         headStyles: { fillColor: [37, 99, 235] }
@@ -678,8 +632,8 @@
                     doc.text('HORAS', 14, y);
                     y += 10;
                     doc.autoTable({
-                        head: [['Fecha', 'Descripción', 'Horario', 'Total']],
-                        body: horas.map(h => [h.fecha, h.desc.substring(0, 30), `${h.inicio}-${h.fin}`, h.total + 'h']),
+                        head: [['Fecha', 'Descripcion', 'Horario', 'Total']],
+                        body: horas.map(h => [h.fecha, h.desc.substring(0, 30), `${h.inicio}-${h.fin}`, h.total.replace('.', ',') + 'h']),
                         startY: y,
                         theme: 'striped',
                         headStyles: { fillColor: [16, 185, 129] }
@@ -690,7 +644,47 @@
                 window.showToast('PDF generado');
             };
 
-            // ========== STATS ==========
+            // ========== CÁLCULO DEL RESUMEN POR TIPO ==========
+            const calcularResumenPorTipo = () => {
+                const tipos = ['Tabique', 'Techo', 'Cajón ML', 'Tabica', 'Cantonera', 'Muro', 'Piso'];
+                const resumen = [];
+                
+                tipos.forEach(tipo => {
+                    const meds = mediciones.filter(m => m.tipo === tipo);
+                    if (meds.length > 0) {
+                        const totalML = meds.reduce((a, b) => a + parseFloat(b.totalL), 0);
+                        const totalM2 = meds.reduce((a, b) => a + parseFloat(b.totalS), 0);
+                        const totalPrecio = meds.reduce((a, b) => a + parseFloat(b.totalPrecio || 0), 0);
+                        
+                        resumen.push({
+                            tipo,
+                            cantidad: meds.length,
+                            ml: totalML,
+                            m2: totalM2,
+                            precio: totalPrecio,
+                            color: getColorTipo(tipo)
+                        });
+                    }
+                });
+                
+                return resumen;
+            };
+
+            const getColorTipo = (tipo) => {
+                const colores = {
+                    'Tabique': 'bg-orange-100 text-orange-700',
+                    'Techo': 'bg-blue-100 text-blue-700',
+                    'Cajón ML': 'bg-purple-100 text-purple-700',
+                    'Tabica': 'bg-green-100 text-green-700',
+                    'Cantonera': 'bg-pink-100 text-pink-700',
+                    'Muro': 'bg-red-100 text-red-700',
+                    'Piso': 'bg-amber-100 text-amber-700'
+                };
+                return colores[tipo] || 'bg-gray-100 text-gray-700';
+            };
+
+            const resumenPorTipo = calcularResumenPorTipo();
+            
             const stats = {
                 totalML: mediciones.reduce((a, b) => a + parseFloat(b.totalL), 0),
                 totalM2: mediciones.reduce((a, b) => a + parseFloat(b.totalS), 0),
@@ -736,25 +730,15 @@
                         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                             {obras.map(o => (
                                 <div key={o.id} className="relative group">
-                                    <button 
-                                        onClick={() => { setObraActual(o); cargarDatosObra(o.id); }}
-                                        className={`obra-chip ${obraActual?.id === o.id ? 'active' : ''}`}
-                                    >
+                                    <button onClick={() => { setObraActual(o); cargarDatosObra(o.id); }} className={`obra-chip ${obraActual?.id === o.id ? 'active' : ''}`}>
                                         {o.nombre}
                                     </button>
                                     {obraActual?.id === o.id && (
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); editarObra(o); }}
-                                            className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 text-white rounded-full text-xs flex items-center justify-center shadow-md"
-                                        >
-                                            ✏️
-                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); editarObra(o); }} className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 text-white rounded-full text-xs flex items-center justify-center shadow-md">✏️</button>
                                     )}
                                 </div>
                             ))}
-                            <button onClick={() => { setEditando(null); setObraForm({ nombre: '', cliente: '', direccion: '', telefono: '', email: '', presupuesto: '' }); setShowObraForm(true); }} className="obra-chip bg-slate-800 text-slate-400 border-slate-700 text-xs">
-                                + Nueva
-                            </button>
+                            <button onClick={() => { setEditando(null); setObraForm({ nombre: '', cliente: '', direccion: '', telefono: '', email: '', presupuesto: '' }); setShowObraForm(true); }} className="obra-chip bg-slate-800 text-slate-400 border-slate-700 text-xs">+ Nueva</button>
                         </div>
                     </header>
 
@@ -774,22 +758,20 @@
                                                 <p className="text-sm opacity-90">{obraActual.cliente}</p>
                                                 <p className="text-xs opacity-75">{obraActual.direccion}</p>
                                             </div>
-                                            <button onClick={() => editarObra(obraActual)} className="p-2 bg-white/20 rounded-lg text-xs">
-                                                ✏️ Editar
-                                            </button>
+                                            <button onClick={() => editarObra(obraActual)} className="p-2 bg-white/20 rounded-lg text-xs">✏️ Editar</button>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-white/20">
                                             <div>
-                                                <p className="text-2xl font-black">{stats.totalML.toFixed(2)}</p>
-                                                <p className="text-xs text-blue-200">metros</p>
+                                                <p className="text-2xl font-black">{window.formatNum(stats.totalML)} <span className="text-sm">ml</span></p>
+                                                <p className="text-xs text-blue-200">metros lineales</p>
                                             </div>
                                             <div>
-                                                <p className="text-2xl font-black">{stats.totalHoras.toFixed(2)}h</p>
-                                                <p className="text-xs text-blue-200">horas</p>
+                                                <p className="text-2xl font-black">{window.formatNum(stats.totalHoras)}<span className="text-sm">h</span></p>
+                                                <p className="text-xs text-blue-200">horas trabajadas</p>
                                             </div>
                                         </div>
                                         {stats.totalPrecio > 0 && (
-                                            <p className="mt-3 pt-3 border-t border-white/20 text-lg font-bold">${stats.totalPrecio.toFixed(2)}</p>
+                                            <p className="mt-3 pt-3 border-t border-white/20 text-lg font-bold">{window.formatEUR(stats.totalPrecio)} €</p>
                                         )}
                                     </div>
 
@@ -816,9 +798,10 @@
                                             <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             <span>Gastos</span>
                                         </div>
-                                        <div className="menu-item" onClick={exportarPDF}>
-                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                            <span>PDF</span>
+                                        <div className="menu-item" onClick={() => setVista('resumen')}>
+                                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                            <span>Resumen</span>
+                                            {resumenPorTipo.length > 0 && <span className="absolute top-1 right-1 bg-purple-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">📊</span>}
                                         </div>
                                     </div>
 
@@ -832,8 +815,8 @@
                                                         <p className="text-sm font-medium">{m.desc}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="font-bold">{m.totalL} ml</p>
-                                                        <p className="text-xs text-emerald-600">{m.totalS} m²</p>
+                                                        <p className="font-bold">{window.formatNum(m.totalL)} ml</p>
+                                                        <p className="text-xs text-emerald-600">{window.formatNum(m.totalS)} m²</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -844,105 +827,162 @@
                         </main>
                     )}
 
-                    {vista === 'mediciones' && (
-                        <VistaLista 
-                            titulo="Mediciones" 
-                            items={mediciones} 
-                            onBack={() => setVista('dashboard')}
-                            onEdit={editarMedicion}
-                            onDelete={(id) => eliminarItem('mediciones', id)}
-                            renderItem={m => (
-                                <>
-                                    <div>
-                                        <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded">{m.tipo}</span>
-                                        <p className="font-medium text-sm mt-1">{m.desc}</p>
-                                        <p className="text-xs text-slate-400">{m.fecha}</p>
+                    {/* ========== VISTA RESUMEN POR TIPO ========== */}
+                    {vista === 'resumen' && (
+                        <main className="flex-1 overflow-y-auto no-scrollbar p-4 bg-slate-100">
+                            <div className="flex items-center gap-4 mb-4">
+                                <button onClick={() => setVista('dashboard')} className="p-2 bg-white rounded-full">←</button>
+                                <h2 className="text-xl font-bold text-slate-800">📊 Resumen por Tipo</h2>
+                            </div>
+
+                            {resumenPorTipo.length === 0 ? (
+                                <div className="text-center text-slate-400 py-10">
+                                    <p>No hay mediciones registradas</p>
+                                    <button onClick={() => setVista('mediciones')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Agregar medición</button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="ios-card overflow-hidden">
+                                        <table className="resumen-tabla">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th className="text-right">Regs.</th>
+                                                    <th className="text-right">Metros</th>
+                                                    <th className="text-right">m²</th>
+                                                    <th className="text-right">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {resumenPorTipo.map(item => (
+                                                    <tr key={item.tipo} className="animate-fade-in">
+                                                        <td>
+                                                            <span className={`tipo-badge ${item.color}`}>
+                                                                {item.tipo}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-right text-slate-600">{item.cantidad}</td>
+                                                        <td className="text-right font-mono">{window.formatNum(item.ml)} ml</td>
+                                                        <td className="text-right font-mono font-medium">{window.formatNum(item.m2)} m²</td>
+                                                        <td className="text-right euro">{window.formatEUR(item.precio)} €</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="total-row">
+                                                    <td colSpan="2">TOTALES</td>
+                                                    <td className="text-right font-mono text-blue-600">{window.formatNum(stats.totalML)} ml</td>
+                                                    <td className="text-right font-mono text-blue-600">{window.formatNum(stats.totalM2)} m²</td>
+                                                    <td className="text-right text-emerald-600 text-lg">{window.formatEUR(stats.totalPrecio)} €</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-bold text-lg">{m.totalL} ml</p>
-                                        <p className="text-xs text-emerald-600">{m.totalS} m²</p>
-                                        {m.precio > 0 && <p className="text-xs text-amber-600">${m.totalPrecio}</p>}
+
+                                    {/* Tarjetas de resumen visual */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {resumenPorTipo.map(item => (
+                                            <div key={item.tipo} className="ios-card p-3">
+                                                <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${item.color}`}>
+                                                    {item.tipo}
+                                                </div>
+                                                <p className="text-2xl font-black text-slate-800">{window.formatNum(item.m2)} <span className="text-sm font-normal">m²</span></p>
+                                                <p className="text-xs text-slate-500">{window.formatNum(item.ml)} ml • {item.cantidad} regs.</p>
+                                                <p className="text-sm font-bold text-emerald-600 mt-1">{window.formatEUR(item.precio)} €</p>
+                                            </div>
+                                        ))}
                                     </div>
-                                </>
+
+                                    {/* Comparación con presupuesto */}
+                                    {obraActual?.presupuesto && (
+                                        <div className="ios-card p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+                                            <h3 className="text-sm font-bold text-amber-800 mb-2">📈 Comparación con Presupuesto</h3>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm text-amber-700">Presupuesto:</span>
+                                                <span className="font-bold text-amber-900">{window.formatEUR(parseFloat(obraActual.presupuesto))} €</span>
+                                            </div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm text-amber-700">Ejecutado:</span>
+                                                <span className="font-bold text-amber-900">{window.formatEUR(stats.totalPrecio)} €</span>
+                                            </div>
+                                            <div className="w-full bg-amber-200 rounded-full h-3 mt-2">
+                                                <div 
+                                                    className="bg-amber-500 h-3 rounded-full transition-all"
+                                                    style={{width: `${Math.min((stats.totalPrecio / parseFloat(obraActual.presupuesto)) * 100, 100)}%`}}
+                                                ></div>
+                                            </div>
+                                            <p className="text-xs text-amber-600 mt-1 text-center">
+                                                {((stats.totalPrecio / parseFloat(obraActual.presupuesto)) * 100).toFixed(1)}% ejecutado
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             )}
-                        />
+                        </main>
+                    )}
+
+                    {vista === 'mediciones' && (
+                        <VistaLista titulo="Mediciones" items={mediciones} onBack={() => setVista('dashboard')} onEdit={editarMedicion} onDelete={(id) => eliminarItem('mediciones', id)} renderItem={m => (
+                            <>
+                                <div>
+                                    <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded">{m.tipo}</span>
+                                    <p className="font-medium text-sm mt-1">{m.desc}</p>
+                                    <p className="text-xs text-slate-400">{m.fecha}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-lg">{window.formatNum(m.totalL)} ml</p>
+                                    <p className="text-xs text-emerald-600">{window.formatNum(m.totalS)} m²</p>
+                                    {m.precio > 0 && <p className="text-xs text-amber-600">{window.formatEUR(m.totalPrecio)} €</p>}
+                                </div>
+                            </>
+                        )} />
                     )}
 
                     {vista === 'horas' && (
-                        <VistaLista 
-                            titulo="Horas Trabajadas" 
-                            items={horas}
-                            onBack={() => setVista('dashboard')}
-                            onEdit={editarHora}
-                            onDelete={(id) => eliminarItem('horas', id)}
-                            renderItem={h => (
-                                <>
-                                    <div>
-                                        <p className="font-medium">{h.desc}</p>
-                                        <p className="text-xs text-slate-400">{h.fecha} • {h.inicio}-{h.fin}</p>
-                                        {h.fotos > 0 && <p className="text-xs text-blue-500 mt-1">📷 {h.fotos} fotos</p>}
-                                    </div>
-                                    <p className="font-bold text-emerald-600 text-xl">{h.total}h</p>
-                                </>
-                            )}
-                        />
+                        <VistaLista titulo="Horas Trabajadas" items={horas} onBack={() => setVista('dashboard')} onEdit={editarHora} onDelete={(id) => eliminarItem('horas', id)} renderItem={h => (
+                            <>
+                                <div>
+                                    <p className="font-medium">{h.desc}</p>
+                                    <p className="text-xs text-slate-400">{h.fecha} • {h.inicio}-{h.fin}</p>
+                                    {h.fotos > 0 && <p className="text-xs text-blue-500 mt-1">📷 {h.fotos} fotos</p>}
+                                </div>
+                                <p className="font-bold text-emerald-600 text-xl">{window.formatNum(h.total)}h</p>
+                            </>
+                        )} />
                     )}
 
                     {vista === 'materiales' && (
-                        <VistaLista 
-                            titulo="Materiales" 
-                            items={materiales}
-                            onBack={() => setVista('dashboard')}
-                            onEdit={editarMaterial}
-                            onDelete={(id) => eliminarItem('materiales', id)}
-                            renderItem={m => (
-                                <>
-                                    <div>
-                                        <p className="font-medium">{m.nombre}</p>
-                                        <p className="text-xs text-slate-400">{m.cantidad} {m.unidad} • {m.proveedor}</p>
-                                    </div>
-                                    <p className="font-bold">${m.total}</p>
-                                </>
-                            )}
-                        />
+                        <VistaLista titulo="Materiales" items={materiales} onBack={() => setVista('dashboard')} onEdit={editarMaterial} onDelete={(id) => eliminarItem('materiales', id)} renderItem={m => (
+                            <>
+                                <div>
+                                    <p className="font-medium">{m.nombre}</p>
+                                    <p className="text-xs text-slate-400">{m.cantidad} {m.unidad} • {m.proveedor}</p>
+                                </div>
+                                <p className="font-bold">{window.formatEUR(m.total)} €</p>
+                            </>
+                        )} />
                     )}
 
                     {vista === 'personal' && (
-                        <VistaLista 
-                            titulo="Personal" 
-                            items={personal}
-                            onBack={() => setVista('dashboard')}
-                            onEdit={editarPersonal}
-                            onDelete={(id) => eliminarItem('personal', id)}
-                            renderItem={p => (
-                                <>
-                                    <div>
-                                        <p className="font-medium">{p.nombre}</p>
-                                        <p className="text-xs text-slate-400">{p.cargo} • {p.telefono}</p>
-                                    </div>
-                                    <p className="text-sm font-bold text-blue-600">${p.salarioDia}/día</p>
-                                </>
-                            )}
-                        />
+                        <VistaLista titulo="Personal" items={personal} onBack={() => setVista('dashboard')} onEdit={editarPersonal} onDelete={(id) => eliminarItem('personal', id)} renderItem={p => (
+                            <>
+                                <div>
+                                    <p className="font-medium">{p.nombre}</p>
+                                    <p className="text-xs text-slate-400">{p.cargo} • {p.telefono}</p>
+                                </div>
+                                <p className="text-sm font-bold text-blue-600">{window.formatEUR(p.salarioDia)} €/día</p>
+                            </>
+                        )} />
                     )}
 
                     {vista === 'gastos' && (
-                        <VistaLista 
-                            titulo="Gastos" 
-                            items={gastos}
-                            onBack={() => setVista('dashboard')}
-                            onEdit={editarGasto}
-                            onDelete={(id) => eliminarItem('gastos', id)}
-                            renderItem={g => (
-                                <>
-                                    <div>
-                                        <p className="font-medium">{g.concepto}</p>
-                                        <p className="text-xs text-slate-400">{g.fecha} • {g.categoria}</p>
-                                    </div>
-                                    <p className="font-bold text-red-500">-${g.monto}</p>
-                                </>
-                            )}
-                        />
+                        <VistaLista titulo="Gastos" items={gastos} onBack={() => setVista('dashboard')} onEdit={editarGasto} onDelete={(id) => eliminarItem('gastos', id)} renderItem={g => (
+                            <>
+                                <div>
+                                    <p className="font-medium">{g.concepto}</p>
+                                    <p className="text-xs text-slate-400">{g.fecha} • {g.categoria}</p>
+                                </div>
+                                <p className="font-bold text-red-500">-{window.formatEUR(g.monto)} €</p>
+                            </>
+                        )} />
                     )}
 
                     {obraActual && vista === 'dashboard' && (
@@ -951,7 +991,7 @@
                         </button>
                     )}
 
-                    {/* Modal Nueva/Editar Obra */}
+                    {/* Modales (simplificados para el ejemplo) */}
                     <div className={`sheet-overlay ${showObraForm ? 'open' : ''}`} onClick={() => setShowObraForm(false)}></div>
                     <div className={`bottom-sheet ${showObraForm ? 'open' : ''}`}>
                         <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
@@ -962,31 +1002,20 @@
                             <input placeholder="Dirección" value={obraForm.direccion} onChange={e => setObraForm({...obraForm, direccion: e.target.value})} />
                             <input placeholder="Teléfono" value={obraForm.telefono} onChange={e => setObraForm({...obraForm, telefono: e.target.value})} />
                             <input placeholder="Email" type="email" value={obraForm.email} onChange={e => setObraForm({...obraForm, email: e.target.value})} />
-                            <input placeholder="Presupuesto $" type="number" value={obraForm.presupuesto} onChange={e => setObraForm({...obraForm, presupuesto: e.target.value})} />
-                            
+                            <input placeholder="Presupuesto €" type="number" value={obraForm.presupuesto} onChange={e => setObraForm({...obraForm, presupuesto: e.target.value})} />
                             <div className="flex gap-2">
-                                {editando && (
-                                    <button onClick={() => { eliminarObra(editando.id); setShowObraForm(false); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">
-                                        🗑️ Eliminar
-                                    </button>
-                                )}
-                                <button onClick={guardarObra} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">
-                                    {editando ? '💾 GUARDAR CAMBIOS' : 'CREAR OBRA'}
-                                </button>
+                                {editando && <button onClick={() => { eliminarObra(editando.id); setShowObraForm(false); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                <button onClick={guardarObra} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'CREAR OBRA'}</button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Modal Formulario Mediciones/Horas/etc */}
                     <div className={`sheet-overlay ${showForm ? 'open' : ''}`} onClick={() => setShowForm(false)}></div>
                     <div className={`bottom-sheet ${showForm ? 'open' : ''}`}>
                         <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4"></div>
-                        
                         <div className="flex gap-2 mb-4 overflow-x-auto">
                             {['medicion', 'horas', 'material', 'personal', 'gasto'].map(t => (
-                                <button key={t} onClick={() => setFormType(t)} className={`px-3 py-2 rounded-full text-xs font-bold capitalize ${formType === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                                    {t}
-                                </button>
+                                <button key={t} onClick={() => setFormType(t)} className={`px-3 py-2 rounded-full text-xs font-bold capitalize ${formType === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{t}</button>
                             ))}
                         </div>
 
@@ -1004,97 +1033,63 @@
                                 </div>
                                 <div className="flex gap-2">
                                     <input placeholder="Altura/Ancho" type="number" value={medForm.mult} onChange={e => setMedForm({...medForm, mult: e.target.value})} />
-                                    <input placeholder="Precio/m²" type="number" value={medForm.precio} onChange={e => setMedForm({...medForm, precio: e.target.value})} />
+                                    <input placeholder="Precio/m² €" type="number" value={medForm.precio} onChange={e => setMedForm({...medForm, precio: e.target.value})} />
                                 </div>
                                 <div className="flex gap-2">
-                                    {editando && (
-                                        <button onClick={() => { eliminarItem('mediciones', editando.id); cerrarFormMedicion(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">
-                                            🗑️ Eliminar
-                                        </button>
-                                    )}
-                                    <button onClick={guardarMedicion} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">
-                                        {editando ? '💾 GUARDAR' : 'GUARDAR'}
-                                    </button>
+                                    {editando && <button onClick={() => { eliminarItem('mediciones', editando.id); cerrarFormMedicion(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                    <button onClick={guardarMedicion} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'GUARDAR'}</button>
                                 </div>
                             </div>
                         )}
 
                         {formType === 'horas' && (
                             <div className="space-y-3">
-                                <input placeholder="Descripción de la tarea" value={horaForm.desc} onChange={e => setHoraForm({...horaForm, desc: e.target.value})} />
+                                <input placeholder="Descripción" value={horaForm.desc} onChange={e => setHoraForm({...horaForm, desc: e.target.value})} />
                                 <div className="grid grid-cols-2 gap-2">
                                     <input type="time" value={horaForm.inicio} onChange={e => setHoraForm({...horaForm, inicio: e.target.value})} />
                                     <input type="time" value={horaForm.fin} onChange={e => setHoraForm({...horaForm, fin: e.target.value})} />
                                 </div>
                                 <input type="number" placeholder="Descanso (min)" value={horaForm.descanso} onChange={e => setHoraForm({...horaForm, descanso: e.target.value})} />
-                                
                                 {!editando && horaForm.fotos.length > 0 && (
                                     <div className="photo-grid">
                                         {horaForm.fotos.map((f, i) => (
-                                            <div key={i} className="photo-thumb">
-                                                <img src={f} />
-                                                <button onClick={() => eliminarFoto(i)} className="delete">×</button>
-                                            </div>
+                                            <div key={i} className="photo-thumb"><img src={f} /><button onClick={() => eliminarFoto(i)} className="delete">×</button></div>
                                         ))}
                                     </div>
                                 )}
-                                
-                                {!editando && (
-                                    <button onClick={tomarFoto} className="w-full py-3 bg-amber-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">
-                                        📷 {horaForm.fotos.length > 0 ? 'Agregar otra foto' : 'Tomar foto'}
-                                    </button>
-                                )}
-                                
+                                {!editando && <button onClick={tomarFoto} className="w-full py-3 bg-amber-500 text-white font-bold rounded-xl">📷 {horaForm.fotos.length > 0 ? 'Agregar foto' : 'Tomar foto'}</button>}
                                 <div className="flex gap-2">
-                                    {editando && (
-                                        <button onClick={() => { eliminarItem('horas', editando.id); cerrarFormHora(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">
-                                            🗑️ Eliminar
-                                        </button>
-                                    )}
-                                    <button onClick={guardarHora} className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl">
-                                        {editando ? '💾 GUARDAR' : 'GUARDAR HORAS'}
-                                    </button>
+                                    {editando && <button onClick={() => { eliminarItem('horas', editando.id); cerrarFormHora(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                    <button onClick={guardarHora} className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'GUARDAR HORAS'}</button>
                                 </div>
                             </div>
                         )}
 
                         {formType === 'material' && (
                             <div className="space-y-3">
-                                <input placeholder="Nombre del material" value={matForm.nombre} onChange={e => setMatForm({...matForm, nombre: e.target.value})} />
+                                <input placeholder="Nombre" value={matForm.nombre} onChange={e => setMatForm({...matForm, nombre: e.target.value})} />
                                 <div className="flex gap-2">
                                     <input placeholder="Cantidad" type="number" value={matForm.cantidad} onChange={e => setMatForm({...matForm, cantidad: e.target.value})} />
                                     <input placeholder="Unidad" value={matForm.unidad} onChange={e => setMatForm({...matForm, unidad: e.target.value})} className="w-24" />
                                 </div>
-                                <input placeholder="Precio unitario" type="number" value={matForm.precioUnitario} onChange={e => setMatForm({...matForm, precioUnitario: e.target.value})} />
+                                <input placeholder="Precio unitario €" type="number" value={matForm.precioUnitario} onChange={e => setMatForm({...matForm, precioUnitario: e.target.value})} />
                                 <input placeholder="Proveedor" value={matForm.proveedor} onChange={e => setMatForm({...matForm, proveedor: e.target.value})} />
                                 <div className="flex gap-2">
-                                    {editando && (
-                                        <button onClick={() => { eliminarItem('materiales', editando.id); cerrarFormMaterial(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">
-                                            🗑️ Eliminar
-                                        </button>
-                                    )}
-                                    <button onClick={guardarMaterial} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">
-                                        {editando ? '💾 GUARDAR' : 'GUARDAR'}
-                                    </button>
+                                    {editando && <button onClick={() => { eliminarItem('materiales', editando.id); setShowForm(false); setEditando(null); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                    <button onClick={guardarMaterial} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'GUARDAR'}</button>
                                 </div>
                             </div>
                         )}
 
                         {formType === 'personal' && (
                             <div className="space-y-3">
-                                <input placeholder="Nombre completo" value={persForm.nombre} onChange={e => setPersForm({...persForm, nombre: e.target.value})} />
+                                <input placeholder="Nombre" value={persForm.nombre} onChange={e => setPersForm({...persForm, nombre: e.target.value})} />
                                 <input placeholder="Cargo" value={persForm.cargo} onChange={e => setPersForm({...persForm, cargo: e.target.value})} />
                                 <input placeholder="Teléfono" value={persForm.telefono} onChange={e => setPersForm({...persForm, telefono: e.target.value})} />
-                                <input placeholder="Salario por día" type="number" value={persForm.salarioDia} onChange={e => setPersForm({...persForm, salarioDia: e.target.value})} />
+                                <input placeholder="Salario/día €" type="number" value={persForm.salarioDia} onChange={e => setPersForm({...persForm, salarioDia: e.target.value})} />
                                 <div className="flex gap-2">
-                                    {editando && (
-                                        <button onClick={() => { eliminarItem('personal', editando.id); cerrarFormPersonal(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">
-                                            🗑️ Eliminar
-                                        </button>
-                                    )}
-                                    <button onClick={guardarPersonal} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">
-                                        {editando ? '💾 GUARDAR' : 'GUARDAR'}
-                                    </button>
+                                    {editando && <button onClick={() => { eliminarItem('personal', editando.id); setShowForm(false); setEditando(null); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                    <button onClick={guardarPersonal} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'GUARDAR'}</button>
                                 </div>
                             </div>
                         )}
@@ -1102,7 +1097,7 @@
                         {formType === 'gasto' && (
                             <div className="space-y-3">
                                 <input placeholder="Concepto" value={gastoForm.concepto} onChange={e => setGastoForm({...gastoForm, concepto: e.target.value})} />
-                                <input placeholder="Monto" type="number" value={gastoForm.monto} onChange={e => setGastoForm({...gastoForm, monto: e.target.value})} />
+                                <input placeholder="Monto €" type="number" value={gastoForm.monto} onChange={e => setGastoForm({...gastoForm, monto: e.target.value})} />
                                 <select value={gastoForm.categoria} onChange={e => setGastoForm({...gastoForm, categoria: e.target.value})}>
                                     <option value="material">Material</option>
                                     <option value="transporte">Transporte</option>
@@ -1111,20 +1106,13 @@
                                     <option value="otro">Otro</option>
                                 </select>
                                 <div className="flex gap-2">
-                                    {editando && (
-                                        <button onClick={() => { eliminarItem('gastos', editando.id); cerrarFormGasto(); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">
-                                            🗑️ Eliminar
-                                        </button>
-                                    )}
-                                    <button onClick={guardarGasto} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl">
-                                        {editando ? '💾 GUARDAR' : 'GUARDAR GASTO'}
-                                    </button>
+                                    {editando && <button onClick={() => { eliminarItem('gastos', editando.id); setShowForm(false); setEditando(null); }} className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl">🗑️ Eliminar</button>}
+                                    <button onClick={guardarGasto} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl">{editando ? '💾 GUARDAR' : 'GUARDAR GASTO'}</button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Visor de fotos */}
                     <div className={`photo-modal ${showPhotoModal ? 'open' : ''}`} onClick={() => setShowPhotoModal(null)}>
                         <button className="absolute top-4 right-4 text-white p-2 bg-black/50 rounded-full">✕</button>
                         {showPhotoModal && <img src={showPhotoModal} />}
@@ -1155,21 +1143,15 @@
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {!isLogin && (
-                                <input placeholder="Tu nombre" value={nombre} onChange={e => setNombre(e.target.value)} className="w-full" />
-                            )}
+                            {!isLogin && <input placeholder="Tu nombre" value={nombre} onChange={e => setNombre(e.target.value)} className="w-full" />}
                             <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full" />
                             <input type="password" placeholder="Contraseña" required className="w-full" />
-                            <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg">
-                                {isLogin ? 'INICIAR SESIÓN' : 'CREAR CUENTA'}
-                            </button>
+                            <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg">{isLogin ? 'INICIAR SESIÓN' : 'CREAR CUENTA'}</button>
                         </form>
 
                         <p className="text-center mt-6 text-sm text-slate-500">
                             {isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-                            <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold">
-                                {isLogin ? 'Regístrate' : 'Inicia sesión'}
-                            </button>
+                            <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold">{isLogin ? 'Regístrate' : 'Inicia sesión'}</button>
                         </p>
                     </div>
                 </div>
@@ -1183,19 +1165,15 @@
                         <button onClick={onBack} className="p-2 bg-white rounded-full">←</button>
                         <h2 className="text-xl font-bold text-slate-800">{titulo}</h2>
                     </div>
-                    {items.length === 0 ? (
-                        <p className="text-center text-slate-400 py-10">No hay registros</p>
-                    ) : (
-                        items.map(item => (
-                            <div key={item.id} className="ios-card p-4 mb-3 flex justify-between items-center">
-                                {renderItem(item)}
-                                <div className="item-actions ml-4">
-                                    <button onClick={() => onEdit(item)} className="btn-icon btn-edit" title="Editar">✏️</button>
-                                    <button onClick={() => onDelete(item.id)} className="btn-icon btn-delete" title="Eliminar">🗑️</button>
-                                </div>
+                    {items.length === 0 ? <p className="text-center text-slate-400 py-10">No hay registros</p> : items.map(item => (
+                        <div key={item.id} className="ios-card p-4 mb-3 flex justify-between items-center">
+                            {renderItem(item)}
+                            <div className="item-actions ml-4">
+                                <button onClick={() => onEdit(item)} className="btn-icon btn-edit" title="Editar">✏️</button>
+                                <button onClick={() => onDelete(item.id)} className="btn-icon btn-delete" title="Eliminar">🗑️</button>
                             </div>
-                        ))
-                    )}
+                        </div>
+                    ))}
                 </main>
             );
         }
